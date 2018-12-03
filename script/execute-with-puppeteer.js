@@ -1,24 +1,27 @@
-
+const { existsSync, mkdirSync } = require('fs');
 const puppeteer = require('puppeteer')
 const devices = require('puppeteer/DeviceDescriptors')
 const { readFileSync: readFile } = require('fs')
-const { join } = require('path')
+const { join, resolve } = require('path')
+const { extensions } = require('../extensions/extensions')
+const { unzipAll } = require('./unzip-crx')
 
-const perfumeSrc = readFile(join(__dirname, 'node_modules/tti-polyfill/tti-polyfill.js'), 'utf8')
+const perfumeSrc = readFile(join(__dirname, '../', 'node_modules/tti-polyfill/tti-polyfill.js'), 'utf8')
 const longTasksSrc = [
-  "!function(){if('PerformanceLongTaskTiming' in window){var g=window.__lt={e:[]};",
+  '!function(){if(\'PerformanceLongTaskTiming\' in window){var g=window.__lt={e:[]};',
   'g.o=new PerformanceObserver(function(l){g.e=g.e.concat(l.getEntries())});',
-  "g.o.observe({entryTypes:['longtask']})}}();"
+  'g.o.observe({entryTypes:[\'longtask\']})}}();',
 ].join('')
 const url = 'https://booking.com'
 
-async function main() {
-  const browser = await puppeteer.launch()
+const TMP_FOLDER = resolve(__dirname, '../tmp')
+
+async function run(browser) {
   const page = await browser.newPage()
   await page.emulate(devices['Nexus 5X'])
   await page.evaluateOnNewDocument(longTasksSrc)
   await page.evaluateOnNewDocument(perfumeSrc)
-  
+
   const client = await page.target().createCDPSession()
 
   // based on 
@@ -36,15 +39,65 @@ async function main() {
   // https://github.com/GoogleChrome/puppeteer/blob/v1.10.0/docs/api.md#working-with-chrome-extensions
 
   await page.goto(url)
-  const result = await page.evaluate(() => {    
+  const result = await page.evaluate(() => {
     return ttiPolyfill.getFirstConsistentlyInteractive()
   })
   await browser.close()
   console.log(JSON.stringify(result, null, '  '))
 }
 
+async function launchBrowserWithExtension(CRX_PATH) {
+  return await puppeteer.launch({
+    headless: false,
+    args: [
+      `--disable-extensions-except=${CRX_PATH}`,
+      `--load-extension=${CRX_PATH}`,
+    ],
+  })
+}
+
+async function runWithExtension(extName) {
+  const browser = await launchBrowserWithExtension(resolve(TMP_FOLDER, extName));
+  await run(browser)
+}
+
+async function runWithoutExtension() {
+  const browser = await puppeteer.launch()
+  await run(browser)
+}
+
 // ~/Library/Application\ Support/Google/Chrome/Default/Extensions
 
-main()
-  .catch(e => console.error(e) && process.exit(1))
-  .then(() => process.exit())
+(async () => {
+  try {
+    if (!existsSync(TMP_FOLDER)) {
+      mkdirSync(TMP_FOLDER);
+      await Promise.all(unzipAll);
+    }
+
+    const extName = Object.keys(extensions)[0];
+
+    const resultsWithoutExt = [
+      runWithoutExtension(),
+      runWithoutExtension(),
+      runWithoutExtension(),
+      runWithoutExtension(),
+    ]
+    const resultsWithExt = [
+      runWithExtension(extName),
+      runWithExtension(extName),
+      runWithExtension(extName),
+      runWithExtension(extName),
+    ]
+
+    console.log('Results without extension \n')
+    await Promise.all(resultsWithoutExt)
+
+    console.log(`Results with extension ${extName}`)
+    await Promise.all(resultsWithExt)
+
+    process.exit()
+  } catch (e) {
+    e => console.error(e) && process.exit(1)
+  }
+})();
