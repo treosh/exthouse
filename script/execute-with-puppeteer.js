@@ -32,6 +32,9 @@ async function main() {
   })
   await client.send('Emulation.setCPUThrottlingRate', { rate: 4 })
 
+  // extensions:
+  // https://github.com/GoogleChrome/puppeteer/blob/v1.10.0/docs/api.md#working-with-chrome-extensions
+
   await page.goto(url)
   const result = await page.evaluate(() => {    
     return ttiPolyfill.getFirstConsistentlyInteractive()
