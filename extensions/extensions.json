@@ -1,0 +1,12 @@
+{
+  "extensions": [
+    {
+      "source": "Grammarly-for-Chrome_v14.883.1937.crx",
+      "name": "Grammarly"
+    },
+    {
+      "source": "AdBlock_v3.34.0.crx",
+      "name": "AdBlock_v3"
+    }
+  ]
+}
