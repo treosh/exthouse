@@ -4,8 +4,10 @@
     "test": "eslint script"
   },
   "dependencies": {
+    "fs-extra": "^7.0.1",
     "lodash": "^4.17.11",
     "puppeteer": "^1.11.0",
+    "simple-statistics": "^6.1.1",
     "tti-polyfill": "^0.2.2",
     "unzip-crx": "^0.2.0"
   },
