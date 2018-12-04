@@ -10,9 +10,12 @@ const unzip = require('unzip-crx')
 // config
 
 const url = 'https://www.booking.com/index.en-gb.html'
-const totalRuns = 5
+const totalRuns = 3
 const extensions = [
   { source: 'Grammarly-for-Chrome_v14.883.1937.crx', name: 'Grammarly' },
+  { source: 'Evernote-Web-Clipper_v7.8.0.crx', name: 'Evernote Web Clipper' },
+  { source: 'Honey_v10.8.1.crx', name: 'Honey' },
+  { source: 'Adblock-Plus_v3.4.2.crx', name: 'Adblock Plus' },
   { source: 'AdBlock_v3.34.0.crx', name: 'AdBlock' }
 ]
 const lhConfig = {
