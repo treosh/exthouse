@@ -4,27 +4,55 @@ Inspired by: https://twitter.com/denar90_/status/1065712688037277696
 
 ## Methodology
 
-* Select a group of URLs to test:
-  * https://www.booking.com/index.en-gb.html
-  * https://www.bbc.com/news
-* Select a group of extensions to test:
-  * [Grammarly for Chrome](https://chrome.google.com/webstore/detail/grammarly-for-chrome/kbfnbcaeplbcioakkpcpgfkobkghlhen?hl=en)
-  * [Adblock](https://chrome.google.com/webstore/detail/adblock/gighmmpiobklfepjocnamgkkbiglidom?hl=en)
-  * [Adblock Plus](https://chrome.google.com/webstore/detail/adblock-plus/cfhdojbkjhnklbpkdaibdccddilifddb?hl=en)
-  * [Evernote Web Clipper](https://chrome.google.com/webstore/detail/evernote-web-clipper/pioclpoplcdbaefihamjohnefbikjilc?hl=en)
-  * [Honey](https://chrome.google.com/webstore/detail/honey/bmnlcjabgnpnenekpadlanbbkooimhnj?hl=en)
-  * [Turn Off the Light (questionable)](https://chrome.google.com/webstore/detail/turn-off-the-lights/bfbmjmiodbnnpllbbbfblcplfjjepjdn?hl=en)
-* Select a testing environment:
-  * Chrome Canary with one installed extensions at a time, including logging in
-  * Audits tab, Lighthouse v4 beta, only performance, Simulated Slow 4G (maybe applied?)
-  * execute audit 5 times on each url (maybe 9)
-  * analyze results using: `script/analyze-results.js`
-  * use TTI and median (maybe parse/compile?)
-  * remove extension
+- Select a group of URLs to test:
+  - https://www.booking.com/index.en-gb.html
+  - https://www.bbc.com/news
+- Select a group of extensions to test:
+  - [Grammarly for Chrome](https://chrome.google.com/webstore/detail/grammarly-for-chrome/kbfnbcaeplbcioakkpcpgfkobkghlhen?hl=en)
+  - [Adblock](https://chrome.google.com/webstore/detail/adblock/gighmmpiobklfepjocnamgkkbiglidom?hl=en)
+  - [Adblock Plus](https://chrome.google.com/webstore/detail/adblock-plus/cfhdojbkjhnklbpkdaibdccddilifddb?hl=en)
+  - [Evernote Web Clipper](https://chrome.google.com/webstore/detail/evernote-web-clipper/pioclpoplcdbaefihamjohnefbikjilc?hl=en)
+  - [Honey](https://chrome.google.com/webstore/detail/honey/bmnlcjabgnpnenekpadlanbbkooimhnj?hl=en)
+  - [Turn Off the Light (questionable)](https://chrome.google.com/webstore/detail/turn-off-the-lights/bfbmjmiodbnnpllbbbfblcplfjjepjdn?hl=en)
+- Select a testing environment:
+  - Chrome Canary with one installed extensions at a time, including logging in
+  - Audits tab, Lighthouse v4 beta, only performance, Simulated Slow 4G (maybe applied?)
+  - execute audit 5 times on each url (maybe 9)
+  - analyze results using: `script/analyze-results.js`
+  - use TTI and median (maybe parse/compile?)
+  - remove extension
 
-## Temporary results
+## Current results
 
-* https://www.booking.com/index.en-gb.html
+```
+Default (no extension):
+TTI: 4780ms
+TTI: 4274ms
+TTI: 4358ms
+TTI: 3977ms
+TTI: 4049ms
+TTI (median of 5): 4274ms
+
+Grammarly:
+TTI: 4806ms
+TTI: 4747ms
+TTI: 4646ms
+TTI: 4861ms
+TTI: 4942ms
+TTI (median of 5): 4806ms
+
+AdBlock:
+TTI: 4505ms
+TTI: 4534ms
+TTI: 4048ms
+TTI: 4142ms
+TTI: 4184ms
+TTI (median of 5): 4184ms
+```
+
+## Manual results
+
+- https://www.booking.com/index.en-gb.html
 
 ```
 grammarly: 6622 [6372,6434,6622,6777,6899]
@@ -36,7 +64,7 @@ evernote-web-clipper: 6205 [6112,6168,6205,6279,6626]
 default: 6150 [6049,6109,6150,6430,6494]
 ```
 
-* https://www.bbc.com/news
+- https://www.bbc.com/news
 
 ```
 turn-of-the-light: 10339 [9155,9329,10339,11640,11685]

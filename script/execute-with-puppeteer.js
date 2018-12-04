@@ -43,7 +43,7 @@ async function main() {
       args: crxPath ? [`--disable-extensions-except=${crxPath}`, `--load-extension=${crxPath}`] : []
     })
     const page = await browser.newPage()
-    if (crxPath) await page.waitFor(10000) // await extension to be installed
+    if (crxPath) await page.waitFor(12000) // await extension to be installed
 
     const results = []
     const lhFlags = { port: new URL(browser.wsEndpoint()).port, output: 'json', preset: 'perf' }
