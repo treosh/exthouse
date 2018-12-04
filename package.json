@@ -1,11 +1,23 @@
 {
+  "scripts": {
+    "start": "node script/execute-with-puppeteer.js",
+    "test": "eslint script"
+  },
   "dependencies": {
     "lodash": "^4.17.11",
     "puppeteer": "^1.11.0",
     "tti-polyfill": "^0.2.2",
     "unzip-crx": "^0.2.0"
   },
-  "scripts": {
-    "start": "node ./script/execute-with-puppeteer.js"
+  "devDependencies": {
+    "eslint": "^5.9.0",
+    "eslint-config-prettier": "^3.3.0",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-node": "^8.0.0",
+    "eslint-plugin-prettier": "^3.0.0",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "prettier": "^1.15.3"
   }
 }

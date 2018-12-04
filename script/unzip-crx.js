@@ -4,8 +4,6 @@ const unzip = require('unzip-crx')
 const PATH_TO_EXTENSIONS = resolve(__dirname, '../extensions/')
 const TMP_FOLDER = resolve(__dirname, '../tmp')
 
-
-
 const unzipAll = async function(extensions) {
   const unzipCrx = (path, destinationPath) => {
     return (async () => {
@@ -20,7 +18,7 @@ const unzipAll = async function(extensions) {
     return acc
   }, [])
 
-  await Promise.all(unzipAllCrx);
+  await Promise.all(unzipAllCrx)
 }
 
-exports.unzipAll = unzipAll;
+exports.unzipAll = unzipAll

@@ -15,5 +15,5 @@ for (const ext of extensions) {
     ttis.push(tti)
   }
   const sortedTtis = sortBy(ttis)
-  console.log('%s: %s %j', ext, sortedTtis[2], sortedTtis)  
+  console.log('%s: %s %j', ext, sortedTtis[2], sortedTtis)
 }

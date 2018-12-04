@@ -51,5 +51,5 @@ adblock-plus: 8991 [8856,8967,8991,9040,9137]
 ### Development
 
 - download extension using https://chrome-extension-downloader.com/
-= put it into `extensions` folder
+- put it into `extensions` folder
 - add new property to `extensions.js`
