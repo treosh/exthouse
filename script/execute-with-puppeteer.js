@@ -1,47 +1,62 @@
-const { round } = require('lodash')
 const { emptyDir } = require('fs-extra')
-const { median } = require('simple-statistics')
 const puppeteer = require('puppeteer')
-const devices = require('puppeteer/DeviceDescriptors')
-const { readFileSync: readFile } = require('fs')
+const lighthouse = require('lighthouse')
+const { median } = require('simple-statistics')
+const { URL } = require('url')
 const { join } = require('path')
+const { writeFileSync } = require('fs')
 const unzip = require('unzip-crx')
 
 // config
 
-const url = 'https://booking.com'
-const totalRuns = 7
+const url = 'https://www.booking.com/index.en-gb.html'
+const totalRuns = 5
 const extensions = [
   { source: 'Grammarly-for-Chrome_v14.883.1937.crx', name: 'Grammarly' },
   { source: 'AdBlock_v3.34.0.crx', name: 'AdBlock' }
 ]
-const tmpDirs = join(__dirname, '../tmp')
+const lhConfig = {
+  extends: 'lighthouse:default',
+  settings: {
+    onlyCategories: ['performance']
+  }
+}
+const tmpDir = join(__dirname, '../tmp')
+const resultsDir = join(__dirname, '../results')
 const extensionsDir = join(__dirname, '../extensions')
-const ttiSrc = readFile(join(__dirname, '../', 'node_modules/tti-polyfill/tti-polyfill.js'), 'utf8')
-const longTasksSrc = [
-  "!function(){if('PerformanceLongTaskTiming' in window){var g=window.__lt={e:[]};",
-  'g.o=new PerformanceObserver(function(l){g.e=g.e.concat(l.getEntries())});',
-  "g.o.observe({entryTypes:['longtask']})}}();"
-].join('')
 
 // main
 
 async function main() {
-  await emptyDir(tmpDirs)
+  await emptyDir(tmpDir)
   await unzipExtensions()
 
-  await run()
-  for (const extension of extensions) await run(extension)
+  for (const extension of [null].concat(extensions)) {
+    const crxPath = extension ? join(tmpDir, extension.name) : null
+    console.log('\n%s:', extension ? extension.name : 'Default (no extension)')
+    const extDir = join(resultsDir, extension ? extension.name : 'Default')
+    await emptyDir(extDir)
 
-  async function run(extension) {
-    const crxPath = extension ? join(tmpDirs, extension.name) : null
+    const browser = await puppeteer.launch({
+      headless: false,
+      defaultViewport: null,
+      args: crxPath ? [`--disable-extensions-except=${crxPath}`, `--load-extension=${crxPath}`] : []
+    })
+    const page = await browser.newPage()
+    if (crxPath) await page.waitFor(10000) // await extension to be installed
+
     const results = []
-    console.log('\n%s:', extension ? extension.name : 'no extensions')
+    const lhFlags = { port: new URL(browser.wsEndpoint()).port, output: 'json', preset: 'perf' }
+
     for (let i = 1; i <= totalRuns; i++) {
-      const result = await runPuppeteer(crxPath)
-      results.push(result)
-      console.log('TTI: %sms', result)
+      const { lhr } = await lighthouse(url, lhFlags, lhConfig)
+      writeFileSync(join(extDir, new Date().toJSON() + '.json'), JSON.stringify(lhr, null, '  '))
+      const tti = Math.round(lhr.audits['interactive'].rawValue)
+      results.push(tti)
+      console.log('TTI: %sms', tti)
     }
+
+    await browser.close()
     console.log('TTI (median of %s): %sms', totalRuns, median(results))
   }
 }
@@ -52,46 +67,13 @@ main()
   .catch(e => console.error(e) && process.exit(1))
   .then(() => process.exit())
 
-// run puppeteer with/without extension
-
-async function runPuppeteer(crxPath = null) {
-  const browser = await puppeteer.launch({
-    headless: false,
-    args: crxPath ? [`--disable-extensions-except=${crxPath}`, `--load-extension=${crxPath}`] : []
-  })
-  const page = await browser.newPage()
-  if (crxPath) await page.waitFor(5000) // await extension to be installed
-
-  await page.emulate(devices['Nexus 5X'])
-  await page.evaluateOnNewDocument(longTasksSrc)
-  await page.evaluateOnNewDocument(ttiSrc)
-
-  const client = await page.target().createCDPSession()
-
-  // network conditions: https://github.com/GoogleChrome/lighthouse/blob/394468bb7554ce7009caa1f5bcf39e39879bade0/lighthouse-core/config/constants.js#L24
-  await client.send('Network.emulateNetworkConditions', {
-    offline: false,
-    downloadThroughput: (1.6 * 1024 * 0.9 * 1024) / 8,
-    uploadThroughput: (750 * 0.9 * 1024) / 8,
-    latency: 150 * 0.9
-  })
-  // cpu throttline: https://github.com/GoogleChrome/lighthouse/blob/2daa2cd0a398b323f83eaa103ba957530aade35a/lighthouse-core/lib/emulation.js#L141
-  await client.send('Emulation.setCPUThrottlingRate', { rate: 4 })
-
-  await page.goto(url)
-  const result = await page.evaluate(() => window.ttiPolyfill.getFirstConsistentlyInteractive())
-
-  await browser.close()
-  return round(result)
-}
-
 // unzip all extensions
 
 async function unzipExtensions() {
   return Promise.all(
     extensions.map(ext => {
       const extPath = join(extensionsDir, ext.source)
-      const destinationPath = join(tmpDirs, ext.name)
+      const destinationPath = join(tmpDir, ext.name)
       return unzip(extPath, destinationPath)
     })
   )

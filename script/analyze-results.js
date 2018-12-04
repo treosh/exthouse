@@ -2,8 +2,7 @@ const { sortBy } = require('lodash')
 const fs = require('fs')
 const { join } = require('path')
 
-const pageName = 'bbc'
-const dir = join(__dirname, '../results', pageName)
+const dir = join(__dirname, '../results')
 const extensions = fs.readdirSync(dir)
 
 for (const ext of extensions) {
