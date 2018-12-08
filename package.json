@@ -12,6 +12,7 @@
     "lighthouse": "3.2.0",
     "lodash": "^4.17.11",
     "ora": "^3.0.0",
+    "p-map": "^2.0.0",
     "percentile": "^1.2.1",
     "puppeteer": "^1.11.0",
     "simple-statistics": "^6.1.1",
