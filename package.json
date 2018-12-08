@@ -1,12 +1,16 @@
 {
   "scripts": {
     "start": "node script/execute-with-puppeteer.js",
-    "test": "eslint script"
+    "test": "eslint script",
+    "eslint-fix": "eslint script --fix"
   },
   "dependencies": {
+    "@gribnoysup/wunderbar": "^2.2.1",
+    "chalk": "^2.4.1",
     "fs-extra": "^7.0.1",
-    "lighthouse": "^4.0.0-alpha.1",
+    "lighthouse": "3.2.0",
     "lodash": "^4.17.11",
+    "ora": "^3.0.0",
     "puppeteer": "^1.11.0",
     "simple-statistics": "^6.1.1",
     "unzip-crx": "^0.2.0"
