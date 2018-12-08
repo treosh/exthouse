@@ -1,6 +1,8 @@
 const chalk = require('chalk')
 const ora = require('ora')
 const wunderbar = require('@gribnoysup/wunderbar')
+const percentile = require('percentile')
+const inRange = require('in-range')
 const eol = require('os').EOL
 const { emptyDir } = require('fs-extra')
 const puppeteer = require('puppeteer')
@@ -34,8 +36,6 @@ const extensionsDir = join(__dirname, '../extensions')
 const log = (text, color = 'gray') => {
   console.log(chalk` {${color} ${text}} `)
 }
-
-const warnColor = 'rgb(255,131,0)'
 
 // main
 async function main(url, options = {}) {
@@ -84,7 +84,7 @@ async function main(url, options = {}) {
             for (const tti of results) {
               log(`TTI: ${tti}`)
             }
-            log(`TTI (median of ${totalRuns}): ${medianTTI}`, warnColor)
+            log(`TTI (median of ${totalRuns}): ${medianTTI}`, 'rgb(255,131,0)')
           }
 
           return {
@@ -130,10 +130,25 @@ const drawChart = (results, options) => {
   const { lmargin, width, xlabel, xmin, xmax } = options
 
   const normalizedData = data.map(value => {
+    const { tti, name } = value
+    const percentile100 = percentile(100, data, item => item.tti)
+    const percentile65 = percentile(65, data, item => item.tti)
+    const percentile40 = percentile(40, data, item => item.tti)
+    const percentile20 = percentile(20, data, item => item.tti)
+    let color
+
+    if (inRange(tti, percentile100.tti, percentile65.tti)) {
+      color = 'red'
+    } else if (inRange(tti, percentile40.tti, percentile65.tti)) {
+      color = '#ff8300'
+    } else if (inRange(tti, percentile20.tti)) {
+      color = 'green'
+    }
+
     return {
-      value: value.tti,
-      label: value.name,
-      color: 'blue'
+      value: tti,
+      label: name,
+      color
     }
   })
 
