@@ -3,6 +3,7 @@ const ora = require('ora')
 const wunderbar = require('@gribnoysup/wunderbar')
 const percentile = require('percentile')
 const inRange = require('in-range')
+const pMap = require('p-map')
 const eol = require('os').EOL
 const { emptyDir } = require('fs-extra')
 const puppeteer = require('puppeteer')
@@ -45,61 +46,77 @@ async function main(url, options = {}) {
   await emptyDir(tmpDir)
   await unzipExtensions()
 
-  const results = await Promise.all(
-    [null]
-      .concat(extensions)
-      .reverse()
-      .map(async extension => {
-        const extName = extension ? extension.name : 'Default (no extension)'
-        const crxPath = extension ? join(tmpDir, extension.name) : null
-        const extDir = join(resultsDir, extension ? extension.name : 'Default')
-        try {
-          await emptyDir(extDir)
+  const allExtensions = Array.apply(null, { length: totalRuns }).reduce((result = []) => {
+    result.push(...[null].concat(extensions))
+    return result
+  }, [])
 
-          const browser = await puppeteer.launch({
-            headless: false,
-            defaultViewport: null,
-            args: crxPath ? [`--disable-extensions-except=${crxPath}`, `--load-extension=${crxPath}`] : []
-          })
-          const page = await browser.newPage()
-          if (crxPath) await page.waitFor(11000) // await extension to be installed
+  const mapper = async extension => {
+    const extName = extension ? extension.name : 'Default (no extension)'
+    const crxPath = extension ? join(tmpDir, extension.name) : null
+    const extDir = join(resultsDir, extension ? extension.name : 'Default')
+    try {
+      await emptyDir(extDir)
 
-          const results = []
-          const lhFlags = { port: new URL(browser.wsEndpoint()).port, output: 'json', preset: 'perf' }
-
-          for (let i = 1; i <= totalRuns; i++) {
-            const { lhr } = await lighthouse(url, lhFlags, lhConfig)
-            writeFileSync(join(extDir, new Date().toJSON() + '.json'), JSON.stringify(lhr, null, '  '))
-            const tti = Math.round(lhr.audits['interactive'].rawValue)
-            results.push(tti)
-          }
-
-          const medianTTI = median(results)
-
-          await browser.close()
-
-          if (json) {
-            log(`\n${extName}:`, 'yellow')
-
-            for (const tti of results) {
-              log(`TTI: ${tti}`)
-            }
-            log(`TTI (median of ${totalRuns}): ${medianTTI}`, 'rgb(255,131,0)')
-          }
-
-          return {
-            name: extName,
-            tti: medianTTI
-          }
-        } catch (e) {
-          log(e.message, 'red')
-          return {
-            name: extName,
-            tti: 0
-          }
-        }
+      const browser = await puppeteer.launch({
+        headless: false,
+        defaultViewport: null,
+        args: crxPath ? [`--disable-extensions-except=${crxPath}`, `--load-extension=${crxPath}`] : []
       })
-  )
+      const page = await browser.newPage()
+      if (crxPath) await page.waitFor(11000) // await extension to be installed
+
+      const lhFlags = { port: new URL(browser.wsEndpoint()).port, output: 'json', preset: 'perf' }
+
+      const { lhr } = await lighthouse(url, lhFlags, lhConfig)
+      writeFileSync(join(extDir, new Date().toJSON() + '.json'), JSON.stringify(lhr, null, '  '))
+      const tti = Math.round(lhr.audits['interactive'].rawValue)
+
+      await browser.close()
+
+      return {
+        name: extName,
+        tti
+      }
+    } catch (e) {
+      log(e.message, 'red')
+      return {
+        name: extName,
+        tti: 0
+      }
+    }
+  }
+
+  const data = await pMap(allExtensions, mapper, { concurrency: totalRuns })
+
+  const mergedData = data.reduce((r, d) => {
+    r[d.name] = r[d.name] || {}
+    r[d.name].ttiArr = r[d.name].ttiArr || []
+    r[d.name].ttiArr.push(d.tti)
+    r[d.name] = {
+      name: d.name,
+      ttiArr: r[d.name].ttiArr
+    }
+    return r
+  }, {})
+
+  const results = Object.values(mergedData).map(result => {
+    const { name, ttiArr } = result
+    const medianTTI = median(ttiArr)
+    if (json) {
+      log(`\n${name}:`, 'yellow')
+
+      for (const tti of ttiArr) {
+        log(`TTI: ${tti}`)
+      }
+      log(`TTI (median of ${totalRuns}): ${medianTTI}`, 'rgb(255,131,0)')
+    }
+
+    return {
+      name,
+      tti: medianTTI
+    }
+  })
 
   const fullWidthInMs = Math.max(...results.map(result => result.tti))
   const maxLabelWidth = Math.max(...results.map(result => result.name.length))
