@@ -2,6 +2,16 @@
 
 Inspired by: https://twitter.com/denar90_/status/1065712688037277696
 
+## CLI
+
+### Install
+- `npm i extensions`
+- `extensions http://example.com/`
+
+Flags
+- json - output data into json file
+- help - shows available flags
+
 ## Methodology
 
 - Select a group of URLs to test:
@@ -77,6 +87,14 @@ adblock-plus: 8991 [8856,8967,8991,9040,9137]
 
 ### Development
 
+For Chrome extensions:
+
 - download extension using https://chrome-extension-downloader.com/
 - put it into `extensions` folder
 - add new property to `extensions.js`
+
+For Firefox extensions:
+
+- open Firefox addons page (e.g. https://addons.mozilla.org/en-US/firefox/addon/grammarly-1/)
+- right click on add button and save-as into `extensions/ff` folder 
+(original answer - https://support.mozilla.org/en-US/questions/1112553)

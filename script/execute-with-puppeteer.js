@@ -1,88 +1,240 @@
-const chalk = require('chalk')
 const ora = require('ora')
 const wunderbar = require('@gribnoysup/wunderbar')
 const percentile = require('percentile')
+const webExt = require('../web-ext').default
+// const { FirefoxDesktopExtensionRunner } = require('web-ext/src/extension-runners/firefox-desktop')
+const throttle = require('@sitespeed.io/throttle');
 const inRange = require('in-range')
 const pMap = require('p-map')
 const eol = require('os').EOL
 const { emptyDir } = require('fs-extra')
-const puppeteer = require('puppeteer')
+const PP = require('puppeteer')
+const PP_FF = require('puppeteer-firefox')
 const lighthouse = require('lighthouse')
 const { median } = require('simple-statistics')
 const { URL } = require('url')
 const { join } = require('path')
 const { writeFileSync } = require('fs')
-const unzip = require('unzip-crx')
+const { unzipExtensions, log } = require('./utils')
+const { tmpDir, resultsDir, totalRuns, lhConfig, chromeExtensions, firefoxExtensions, browsers } = require('./settings')
 
-// config
-const totalRuns = 7
-const extensions = [
-  { source: 'Grammarly-for-Chrome_v14.883.1937.crx', name: 'Grammarly' },
-  { source: 'Evernote-Web-Clipper_v7.8.0.crx', name: 'Evernote Web Clipper' },
-  { source: 'Honey_v10.8.1.crx', name: 'Honey' },
-  { source: 'LastPass_-Free-Password-Manager_v4.19.0.crx', name: 'LastPass' },
-  { source: 'Ghostery-–-Privacy-Ad-Blocker_v8.2.5.crx', name: 'Ghostery' },
-  { source: 'AdBlock_v3.34.0.crx', name: 'AdBlock' }
-]
-const lhConfig = {
-  extends: 'lighthouse:default',
-  settings: {
-    onlyCategories: ['performance']
+const measureExtensionInChrome = async ({ extension, extName, url, extPath }) => {
+  const extDir = join(resultsDir, extension ? extension.name : 'Default')
+  await emptyDir(extDir)
+
+  const browser = await PP.launch({
+    headless: false,
+    defaultViewport: null,
+    args: extPath ? [`--disable-extensions-except=${extPath}`, `--load-extension=${extPath}`] : [],
+  })
+  const page = await browser.newPage()
+  if (extPath) await page.waitFor(11000) // await extension to be installed
+
+  const lhFlags = { port: new URL(browser.wsEndpoint()).port, output: 'json', preset: 'perf' }
+
+  const { lhr } = await lighthouse(url, lhFlags, lhConfig)
+  writeFileSync(join(extDir, new Date().toJSON() + '.json'), JSON.stringify(lhr, null, '  '))
+  const tti = Math.round(lhr.audits['interactive'].rawValue)
+
+  await browser.close()
+
+  return {
+    name: extName,
+    tti,
   }
 }
-const tmpDir = join(__dirname, '../tmp')
-const resultsDir = join(__dirname, '../results')
-const extensionsDir = join(__dirname, '../extensions')
 
-const log = (text, color = 'gray') => {
-  console.log(chalk` {${color} ${text}} `)
+const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) => {
+  let extensionRunners
+  let browser
+
+  if (extPath) {
+
+    // web-ext running
+    /*
+    webExt.util.logger.consoleStream.makeVerbose();
+
+    extensionRunners = await webExt.cmd.run({
+      sourceDir: extPath,
+      // comment if connect to default FF
+      firefox: PP_FF.executablePath(),
+    }, {
+      // These are non CLI related options for each function.
+      // You need to specify this one so that your NodeJS application
+      // can continue running after web-ext is finished.
+      shouldExitProgram: false,
+    })
+    */
+
+    // Uncomment case step to
+
+    // Case 1: Connect FF browser instance run by webExt
+
+    /*
+    webExt.util.logger.consoleStream.makeVerbose();
+
+    extensionRunners = await webExt.cmd.run({
+      sourceDir: extPath,
+      // comment if connect to default FF
+      firefox: PP_FF.executablePath(),
+    }, {
+      // These are non CLI related options for each function.
+      // You need to specify this one so that your NodeJS application
+      // can continue running after web-ext is finished.
+      shouldExitProgram: false,
+    })
+
+    const extensionRunner = extensionRunners.extensionRunners[0]
+
+    const browserWSEndpoint = `ws://127.0.0.1:${extensionRunner.remoteFirefox.client.client.client.remotePort}`
+    browser = await PP_FF.connect({
+      browserWSEndpoint,
+    })
+    */
+
+    // error received
+
+    // ... TCP.onread (net.js:602:20) bytesParsed: 0, code: 'HPE_INVALID_CONSTANT' }
+    // looks like ports can't match or something
+
+    //--------------------------------------------------------
+
+    // Case 2: run web-ext with FF instance run by PP_FF
+    // install web ext from denar90 built fork https://github.com/denar90/web-ext-firefox-port instead of web-ext original
+
+    /*
+    browser = await PP_FF.launch({
+      headless: false,
+    })
+
+    const wsEndpoint = new URL(browser.wsEndpoint())
+
+    webExt.util.logger.consoleStream.makeVerbose();
+
+    extensionRunners = await webExt.cmd.run({
+      sourceDir: extPath,
+      firefoxPort: wsEndpoint.port,
+    }, {
+      // These are non CLI related options for each function.
+      // You need to specify this one so that your NodeJS application
+      // can continue running after web-ext is finished.
+      shouldExitProgram: false,
+    })
+    */
+
+    // error received
+
+    // browser is connected but never install extension
+    // log from console
+
+    // [firefox/remote.js][debug] Connecting to the remote Firefox debugger
+    // [firefox/remote.js][debug] Connecting to Firefox on port 8000
+    // [firefox/remote.js][debug] Connected to the remote Firefox debugger on port 8000
+    // ...nothing happens...
+
+    //--------------------------------------------------------
+
+    // Case 3: connect to FF instance run by web-ext to PP_FF
+
+    /*
+    browser = await PP_FF.launch({
+      headless: false,
+    })
+
+    webExt.util.logger.consoleStream.makeVerbose();
+
+    extensionRunners = await webExt.cmd.run({
+      sourceDir: extPath,
+      firefox: PP_FF.executablePath(),
+    }, {
+      // These are non CLI related options for each function.
+      // You need to specify this one so that your NodeJS application
+      // can continue running after web-ext is finished.
+      shouldExitProgram: false,
+    })
+
+    const connect = (port, host) => {
+      return new Promise(resolve => {
+        extensionRunner.remoteFirefox.client.connect(port, host, resolve);
+      });
+    }
+
+    const wsEndpoint = new URL(browser.wsEndpoint())
+
+    await connect(wsEndpoint.port, wsEndpoint.hostname)
+
+    */
+
+    // error received
+
+    // extension doesn't have influence on perf of page run in PP_FF browser because it's installed in FF run by web-ext
+
+  } else {
+    browser = await PP_FF.launch({
+      headless: false,
+    })
+  }
+
+  const page = await browser.newPage()
+
+  // throttle since FF_PP can't do that, yet
+  // it requires password from sudo which breaks running process of cli
+  // run from console `throttle --start`, then `throttle --stop` then uncomment lines below
+  // await throttle.start({
+  //   down: 1600,
+  //   up: 768,
+  //   rtt: 75
+  // })
+  await page.goto(url, {
+    waitUntil: ['load'],
+  })
+  const result = await page.evaluate(() => {
+    return performance.now()
+  })
+  // await throttle.stop()
+  if (extPath) extensionRunners.exit()
+  await browser.close()
+
+  return {
+    name: extName,
+    tti: result,
+  }
+}
+
+const measureExtension = {
+  [browsers.CHROME]: measureExtensionInChrome,
+  [browsers.FIREFOX]: measureExtensionInFirefox,
+}
+
+const extensions = {
+  [browsers.CHROME]: chromeExtensions,
+  [browsers.FIREFOX]: firefoxExtensions,
 }
 
 // main
 async function main(url, options = {}) {
-  const { json } = options
+  let { json, browserType = 'ff' } = options
   log(`URL: ${url}`, 'blue')
   const spinner = ora('Processing extensions').start()
   await emptyDir(tmpDir)
-  await unzipExtensions()
+  await unzipExtensions({ extensions: extensions[browserType], browserType })
 
   const allExtensions = Array.apply(null, { length: totalRuns }).reduce((result = []) => {
-    result.push(...[null].concat(extensions))
+    result.push(...[null].concat(extensions[browserType]))
     return result
   }, [])
 
   const mapper = async extension => {
     const extName = extension ? extension.name : 'Default (no extension)'
-    const crxPath = extension ? join(tmpDir, extension.name) : null
-    const extDir = join(resultsDir, extension ? extension.name : 'Default')
+    const extPath = extension ? join(tmpDir, browserType, extension.name) : null
+
     try {
-      await emptyDir(extDir)
-
-      const browser = await puppeteer.launch({
-        headless: false,
-        defaultViewport: null,
-        args: crxPath ? [`--disable-extensions-except=${crxPath}`, `--load-extension=${crxPath}`] : []
-      })
-      const page = await browser.newPage()
-      if (crxPath) await page.waitFor(11000) // await extension to be installed
-
-      const lhFlags = { port: new URL(browser.wsEndpoint()).port, output: 'json', preset: 'perf' }
-
-      const { lhr } = await lighthouse(url, lhFlags, lhConfig)
-      writeFileSync(join(extDir, new Date().toJSON() + '.json'), JSON.stringify(lhr, null, '  '))
-      const tti = Math.round(lhr.audits['interactive'].rawValue)
-
-      await browser.close()
-
-      return {
-        name: extName,
-        tti
-      }
+      return measureExtension[browserType]({ extension, extName, url, extPath })
     } catch (e) {
       log(e.message, 'red')
       return {
         name: extName,
-        tti: 0
+        tti: 0,
       }
     }
   }
@@ -95,7 +247,7 @@ async function main(url, options = {}) {
     r[d.name].ttiArr.push(d.tti)
     r[d.name] = {
       name: d.name,
-      ttiArr: r[d.name].ttiArr
+      ttiArr: r[d.name].ttiArr,
     }
     return r
   }, {})
@@ -114,7 +266,7 @@ async function main(url, options = {}) {
 
     return {
       name,
-      tti: medianTTI
+      tti: medianTTI,
     }
   })
 
@@ -130,7 +282,7 @@ async function main(url, options = {}) {
     xmin: 0,
     // nearest second
     xmax: Math.ceil(fullWidthInMs / 1000) * 1000,
-    lmargin: maxLabelWidth + 1
+    lmargin: maxLabelWidth + 1,
   })
 
   spinner.succeed()
@@ -140,7 +292,7 @@ async function main(url, options = {}) {
 
 const drawChart = (results, options) => {
   const data = results.slice(0)
-  data.sort(function(a, b) {
+  data.sort(function (a, b) {
     return a.tti - b.tti
   })
 
@@ -165,7 +317,7 @@ const drawChart = (results, options) => {
     return {
       value: tti,
       label: name,
-      color
+      color,
     }
   })
 
@@ -173,7 +325,7 @@ const drawChart = (results, options) => {
     min: xmin,
     max: xmax,
     length: width,
-    format: '0,000'
+    format: '0,000',
   })
 
   const { normalizedValues, minValueFormatted, maxValueFormatted } = __raw
@@ -207,16 +359,13 @@ const drawChart = (results, options) => {
   console.log('')
 }
 
-// unzip all extensions
-
-async function unzipExtensions() {
-  return Promise.all(
-    extensions.map(ext => {
-      const extPath = join(extensionsDir, ext.source)
-      const destinationPath = join(tmpDir, ext.name)
-      return unzip(extPath, destinationPath)
-    })
-  )
-}
-
 exports.extensions = main
+
+// just for debugging single file with IDE
+// ;(async () => {
+//   try {
+//     await main('https://smashingmagazine.com')
+//   } catch (e) {
+//     console.log(e)
+//   }
+// })()
