@@ -1,8 +1,7 @@
 const ora = require('ora')
 const wunderbar = require('@gribnoysup/wunderbar')
 const percentile = require('percentile')
-const webExt = require('../web-ext').default
-// const { FirefoxDesktopExtensionRunner } = require('web-ext/src/extension-runners/firefox-desktop')
+const webExt = require('web-ext').default
 const throttle = require('@sitespeed.io/throttle');
 const inRange = require('in-range')
 const pMap = require('p-map')
@@ -69,7 +68,6 @@ const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) =
     // Uncomment case step to
 
     // Case 1: Connect FF browser instance run by webExt
-
     /*
     webExt.util.logger.consoleStream.makeVerbose();
 
