@@ -30,6 +30,6 @@
     "prettier": "^1.15.3",
     "puppeteer": "^1.13.0",
     "puppeteer-firefox": "^0.5.0",
-    "web-ext": "3.0.0"
+    "web-ext": "denar90/web-ext#binaryArgs-build"
   }
 }

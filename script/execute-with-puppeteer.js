@@ -48,33 +48,15 @@ const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) =
   let browser
 
   if (extPath) {
-
-    // web-ext running
-    /*
-    webExt.util.logger.consoleStream.makeVerbose();
+    const CDPPort = 6006
 
     extensionRunners = await webExt.cmd.run({
       sourceDir: extPath,
       // comment if connect to default FF
       firefox: PP_FF.executablePath(),
-    }, {
-      // These are non CLI related options for each function.
-      // You need to specify this one so that your NodeJS application
-      // can continue running after web-ext is finished.
-      shouldExitProgram: false,
-    })
-    */
-
-    // Uncomment case step to
-
-    // Case 1: Connect FF browser instance run by webExt
-    /*
-    webExt.util.logger.consoleStream.makeVerbose();
-
-    extensionRunners = await webExt.cmd.run({
-      sourceDir: extPath,
-      // comment if connect to default FF
-      firefox: PP_FF.executablePath(),
+      binaryArgs: [
+        `-juggler=${CDPPort}`
+      ]
     }, {
       // These are non CLI related options for each function.
       // You need to specify this one so that your NodeJS application
@@ -82,91 +64,10 @@ const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) =
       shouldExitProgram: false,
     })
 
-    const extensionRunner = extensionRunners.extensionRunners[0]
-
-    const browserWSEndpoint = `ws://127.0.0.1:${extensionRunner.remoteFirefox.client.client.client.remotePort}`
+    const browserWSEndpoint = `ws://127.0.0.1:${CDPPort}`
     browser = await PP_FF.connect({
       browserWSEndpoint,
     })
-    */
-
-    // error received
-
-    // ... TCP.onread (net.js:602:20) bytesParsed: 0, code: 'HPE_INVALID_CONSTANT' }
-    // looks like ports can't match or something
-
-    //--------------------------------------------------------
-
-    // Case 2: run web-ext with FF instance run by PP_FF
-    // install web ext from denar90 built fork https://github.com/denar90/web-ext-firefox-port instead of web-ext original
-
-    /*
-    browser = await PP_FF.launch({
-      headless: false,
-    })
-
-    const wsEndpoint = new URL(browser.wsEndpoint())
-
-    webExt.util.logger.consoleStream.makeVerbose();
-
-    extensionRunners = await webExt.cmd.run({
-      sourceDir: extPath,
-      firefoxPort: wsEndpoint.port,
-    }, {
-      // These are non CLI related options for each function.
-      // You need to specify this one so that your NodeJS application
-      // can continue running after web-ext is finished.
-      shouldExitProgram: false,
-    })
-    */
-
-    // error received
-
-    // browser is connected but never install extension
-    // log from console
-
-    // [firefox/remote.js][debug] Connecting to the remote Firefox debugger
-    // [firefox/remote.js][debug] Connecting to Firefox on port 8000
-    // [firefox/remote.js][debug] Connected to the remote Firefox debugger on port 8000
-    // ...nothing happens...
-
-    //--------------------------------------------------------
-
-    // Case 3: connect to FF instance run by web-ext to PP_FF
-
-    /*
-    browser = await PP_FF.launch({
-      headless: false,
-    })
-
-    webExt.util.logger.consoleStream.makeVerbose();
-
-    extensionRunners = await webExt.cmd.run({
-      sourceDir: extPath,
-      firefox: PP_FF.executablePath(),
-    }, {
-      // These are non CLI related options for each function.
-      // You need to specify this one so that your NodeJS application
-      // can continue running after web-ext is finished.
-      shouldExitProgram: false,
-    })
-
-    const connect = (port, host) => {
-      return new Promise(resolve => {
-        extensionRunner.remoteFirefox.client.connect(port, host, resolve);
-      });
-    }
-
-    const wsEndpoint = new URL(browser.wsEndpoint())
-
-    await connect(wsEndpoint.port, wsEndpoint.hostname)
-
-    */
-
-    // error received
-
-    // extension doesn't have influence on perf of page run in PP_FF browser because it's installed in FF run by web-ext
-
   } else {
     browser = await PP_FF.launch({
       headless: false,
@@ -174,6 +75,7 @@ const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) =
   }
 
   const page = await browser.newPage()
+  if (extPath) await page.waitFor(11000) // await extension to be installed
 
   // throttle since FF_PP can't do that, yet
   // it requires password from sudo which breaks running process of cli
@@ -211,7 +113,7 @@ const extensions = {
 
 // main
 async function main(url, options = {}) {
-  let { json, browserType = 'ff' } = options
+  let { json, browserType = browsers.CHROME } = options
   log(`URL: ${url}`, 'blue')
   const spinner = ora('Processing extensions').start()
   await emptyDir(tmpDir)
@@ -358,12 +260,3 @@ const drawChart = (results, options) => {
 }
 
 exports.extensions = main
-
-// just for debugging single file with IDE
-// ;(async () => {
-//   try {
-//     await main('https://smashingmagazine.com')
-//   } catch (e) {
-//     console.log(e)
-//   }
-// })()
