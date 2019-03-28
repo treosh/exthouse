@@ -20,6 +20,11 @@ exports.chromeExtensions = [
 ]
 exports.firefoxExtensions = [
   { source: 'grammarly_for_firefox-8.845.2049-an+fx.xpi', name: 'Grammarly' },
+  { source: 'evernote_web_clipper-6.13-an+fx-mac.xpi', name: 'Evernote Web Clipper' },
+  { source: 'honey-11.1.0-fx.xpi', name: 'Honey' },
+  { source: 'lastpass_password_manager-4.26.0.4-fx.xpi', name: 'LastPass' },
+  { source: 'ghostery_privacy_ad_blocker-8.3.1-an+fx.xpi', name: 'Ghostery' },
+  { source: 'adblock_plus-3.5-an+fx.xpi', name: 'AdBlock' }
 ]
 exports.browsers = {
   CHROME: 'chrome',

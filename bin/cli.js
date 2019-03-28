@@ -22,6 +22,7 @@ if (!url || flags.help) {
   console.error('Usage:');
   console.error('    extensions http://example.com/');
   console.error('    extensions http://example.com/ --json');
+  console.error('    extensions http://example.com/ --browserType');
 
   return;
 }
