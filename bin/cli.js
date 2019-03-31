@@ -23,6 +23,8 @@ if (!url || flags.help) {
   console.error('    extensions http://example.com/');
   console.error('    extensions http://example.com/ --json');
   console.error('    extensions http://example.com/ --browserType');
+  // @todo add totalRuns flag
+  // @todo add extSourceDir flag
 
   return;
 }

@@ -1,6 +1,8 @@
+const { execSync } = require('child_process')
+const { join } = require('path')
+const { writeFileSync } = require('fs')
 const ora = require('ora')
 const webExt = require('web-ext').default
-const throttle = require('@sitespeed.io/throttle');
 const getPort = require('get-port')
 const pMap = require('p-map')
 const { emptyDir } = require('fs-extra')
@@ -9,8 +11,6 @@ const PP_FF = require('puppeteer-firefox')
 const lighthouse = require('lighthouse')
 const { median } = require('simple-statistics')
 const { URL } = require('url')
-const { join } = require('path')
-const { writeFileSync } = require('fs')
 const { unzipExtensions, log, drawChart } = require('./utils')
 const { tmpDir, resultsDir, totalRuns, lhConfig, chromeExtensions, firefoxExtensions, browsers } = require('./settings')
 
@@ -21,12 +21,17 @@ const measureExtensionInChrome = async ({ extension, extName, url, extPath }) =>
   const browser = await PP.launch({
     headless: false,
     defaultViewport: null,
-    args: extPath ? [`--disable-extensions-except=${extPath}`, `--load-extension=${extPath}`] : [],
+    args: extPath ? [`--disable-extensions-except=${extPath}`, `--load-extension=${extPath}`] : []
   })
   const page = await browser.newPage()
   if (extPath) await page.waitFor(11000) // await extension to be installed
 
-  const lhFlags = { port: new URL(browser.wsEndpoint()).port, output: 'json', preset: 'perf' }
+  const lhFlags = {
+    port: new URL(browser.wsEndpoint()).port,
+    output: 'json',
+    preset: 'perf',
+    disableDeviceEmulation: true
+  }
 
   const { lhr } = await lighthouse(url, lhFlags, lhConfig)
   writeFileSync(join(extDir, new Date().toJSON() + '.json'), JSON.stringify(lhr, null, '  '))
@@ -36,7 +41,7 @@ const measureExtensionInChrome = async ({ extension, extName, url, extPath }) =>
 
   return {
     name: extName,
-    tti,
+    tti
   }
 }
 
@@ -48,72 +53,65 @@ const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) =
     // @todo wait for https://github.com/sindresorhus/get-port/pull/28 and than use range for 6000 port
     const CDPPort = await getPort()
 
-    extensionRunners = await webExt.cmd.run({
-      sourceDir: extPath,
-      // comment if connect to default FF
-      firefox: PP_FF.executablePath(),
-      binaryArgs: [
-        `-juggler=${CDPPort}`
-      ]
-    }, {
-      // These are non CLI related options for each function.
-      // You need to specify this one so that your NodeJS application
-      // can continue running after web-ext is finished.
-      shouldExitProgram: false,
-    })
+    extensionRunners = await webExt.cmd.run(
+      {
+        sourceDir: extPath,
+        // comment if connect to default FF
+        firefox: PP_FF.executablePath(),
+        binaryArgs: [`-juggler=${CDPPort}`]
+      },
+      {
+        // These are non CLI related options for each function.
+        // You need to specify this one so that your NodeJS application
+        // can continue running after web-ext is finished.
+        shouldExitProgram: false
+      }
+    )
 
     const browserWSEndpoint = `ws://127.0.0.1:${CDPPort}`
     browser = await PP_FF.connect({
-      browserWSEndpoint,
+      browserWSEndpoint
     })
   } else {
     browser = await PP_FF.launch({
-      headless: false,
+      headless: false
     })
   }
 
   const page = await browser.newPage()
   if (extPath) await page.waitFor(11000) // await extension to be installed
 
-  // throttle since FF_PP can't do that, yet
-  // it requires password from sudo which breaks running process of cli
-  // run from console `throttle --start`, then `throttle --stop` then uncomment lines below
-  // await throttle.start({
-  //   down: 1600,
-  //   up: 768,
-  //   rtt: 75
-  // })
+  // throttle since Firefox can't do that, yet
   await page.goto(url, {
-    waitUntil: ['load'],
+    waitUntil: ['load']
   })
   const result = await page.evaluate(() => {
-    return performance.now()
+    return performance.now() // eslint-disable-line
   })
-  // await throttle.stop()
   if (extPath) extensionRunners.exit()
   await browser.close()
 
   return {
     name: extName,
-    tti: result,
+    tti: result
   }
 }
 
 const measureExtension = {
   [browsers.CHROME]: measureExtensionInChrome,
-  [browsers.FIREFOX]: measureExtensionInFirefox,
+  [browsers.FIREFOX]: measureExtensionInFirefox
 }
 
 const extensions = {
   [browsers.CHROME]: chromeExtensions,
-  [browsers.FIREFOX]: firefoxExtensions,
+  [browsers.FIREFOX]: firefoxExtensions
 }
 
 // main
 async function main(url, options = {}) {
   let { json, browserType = browsers.CHROME } = options
   log(`URL: ${url}`, 'blue')
-  const spinner = ora('Processing extensions').start()
+  const spinner = ora('Processing extensions \n').start()
   await emptyDir(tmpDir)
   await unzipExtensions({ extensions: extensions[browserType], browserType })
 
@@ -132,12 +130,14 @@ async function main(url, options = {}) {
       log(e.message, 'red')
       return {
         name: extName,
-        tti: 0,
+        tti: 0
       }
     }
   }
 
+  execSync('./node_modules/.bin/throttle --start --down 1600 --up 768 --rtt 75')
   const data = await pMap(allExtensions, mapper, { concurrency: totalRuns })
+  execSync('./node_modules/.bin/throttle --stop')
 
   const mergedData = data.reduce((r, d) => {
     r[d.name] = r[d.name] || {}
@@ -145,7 +145,7 @@ async function main(url, options = {}) {
     r[d.name].ttiArr.push(d.tti)
     r[d.name] = {
       name: d.name,
-      ttiArr: r[d.name].ttiArr,
+      ttiArr: r[d.name].ttiArr
     }
     return r
   }, {})
@@ -164,7 +164,7 @@ async function main(url, options = {}) {
 
     return {
       name,
-      tti: medianTTI,
+      tti: medianTTI
     }
   })
 
@@ -180,7 +180,7 @@ async function main(url, options = {}) {
     xmin: 0,
     // nearest second
     xmax: Math.ceil(fullWidthInMs / 1000) * 1000,
-    lmargin: maxLabelWidth + 1,
+    lmargin: maxLabelWidth + 1
   })
 
   spinner.succeed()

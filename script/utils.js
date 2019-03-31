@@ -23,7 +23,7 @@ exports.log = (text, color = 'gray') => {
 
 exports.drawChart = (results, options) => {
   const data = results.slice(0)
-  data.sort(function (a, b) {
+  data.sort(function(a, b) {
     return a.tti - b.tti
   })
 
@@ -48,7 +48,7 @@ exports.drawChart = (results, options) => {
     return {
       value: tti,
       label: name,
-      color,
+      color
     }
   })
 
@@ -56,7 +56,7 @@ exports.drawChart = (results, options) => {
     min: xmin,
     max: xmax,
     length: width,
-    format: '0,000',
+    format: '0,000'
   })
 
   const { normalizedValues, minValueFormatted, maxValueFormatted } = __raw
