@@ -3,7 +3,7 @@ const { join } = require('path')
 exports.tmpDir = join(__dirname, '../tmp')
 exports.resultsDir = join(__dirname, '../results')
 exports.extensionsDir = join(__dirname, '../extensions')
-exports.totalRuns = 1
+exports.totalRuns = 7
 exports.lhConfig = {
   extends: 'lighthouse:default',
   settings: {
@@ -28,5 +28,5 @@ exports.firefoxExtensions = [
 ]
 exports.browsers = {
   CHROME: 'chrome',
-  FIREFOX: 'ff',
+  FIREFOX: 'ff'
 }
