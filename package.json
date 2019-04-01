@@ -18,7 +18,7 @@
     "percentile": "^1.2.1",
     "simple-statistics": "^6.1.1",
     "unzip-crx": "^0.2.0",
-    "web-ext": "denar90/web-ext#binaryArgs-build",
+    "web-ext": "denar90/web-ext#build-args-feature",
     "puppeteer": "^1.13.0",
     "puppeteer-firefox": "^0.5.0"
   },
