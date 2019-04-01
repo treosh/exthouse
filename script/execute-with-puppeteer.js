@@ -58,7 +58,7 @@ const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) =
         sourceDir: extPath,
         // comment if connect to default FF
         firefox: PP_FF.executablePath(),
-        binaryArgs: [`-juggler=${CDPPort}`]
+        args: [`-juggler=${CDPPort}`]
       },
       {
         // These are non CLI related options for each function.
