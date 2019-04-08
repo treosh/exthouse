@@ -1,32 +1,31 @@
 #!/usr/bin/env node
 
 // @todo find some cool branding name
-const extensions = require('../');
+const extensions = require('../')
 
-const argv = process.argv.slice(2);
-const url = argv[0];
-const flags = {};
+const argv = process.argv.slice(2)
+const url = argv[0]
+const flags = {}
 
 argv
   .filter(f => f.startsWith('-'))
   .forEach(f => {
-    var keyValue = f.split('=');
-    const flagKey = keyValue[0].replace(/-*/, '');
-    flags[flagKey] = keyValue[1] || true;
-  });
+    var keyValue = f.split('=')
+    const flagKey = keyValue[0].replace(/-*/, '')
+    flags[flagKey] = keyValue[1] || true
+  })
 
-
-argv.filter(f => !f.startsWith('-')).shift();
+argv.filter(f => !f.startsWith('-')).shift()
 
 if (!url || flags.help) {
-  console.error('Usage:');
-  console.error('    extensions http://example.com/');
-  console.error('    extensions http://example.com/ --json');
-  console.error('    extensions http://example.com/ --browserType');
-  // @todo add totalRuns flag
-  // @todo add extSourceDir flag
+  console.error('Usage:')
+  console.error('    extensions http://example.com/')
+  console.error('    extensions http://example.com/ --json')
+  console.error('    extensions http://example.com/ --browserType=ff')
+  console.error('    extensions http://example.com/ --extSourceDir=/root/my-folder-with-extensions')
+  //@todo add totalRuns flag
 
-  return;
+  return
 }
 
 extensions(url, flags)

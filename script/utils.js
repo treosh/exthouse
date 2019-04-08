@@ -5,12 +5,12 @@ const unzip = require('unzip-crx')
 const inRange = require('in-range')
 const wunderbar = require('@gribnoysup/wunderbar')
 const percentile = require('percentile')
-const { extensionsDir, tmpDir } = require('./settings')
+const { tmpDir } = require('./settings')
 
-exports.unzipExtensions = ({ extensions, browserType }) => {
+exports.unzipExtensions = ({ extensions, browserType, extensionsDir }) => {
   return Promise.all(
     extensions.map(ext => {
-      const extPath = join(extensionsDir, browserType, ext.source)
+      const extPath = join(extensionsDir, ext.source)
       const destinationPath = join(tmpDir, browserType, ext.name)
       return unzip(extPath, destinationPath)
     })
