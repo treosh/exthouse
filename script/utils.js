@@ -7,12 +7,11 @@ const wunderbar = require('@gribnoysup/wunderbar')
 const percentile = require('percentile')
 const { tmpDir } = require('./settings')
 
-exports.unzipExtensions = ({ extensions, browserType, extensionsDir }) => {
+exports.unzipExtensions = ({ extensions, browserType }) => {
   return Promise.all(
     extensions.map(ext => {
-      const extPath = join(extensionsDir, ext.source)
       const destinationPath = join(tmpDir, browserType, ext.name)
-      return unzip(extPath, destinationPath)
+      return unzip(ext.source, destinationPath)
     })
   )
 }

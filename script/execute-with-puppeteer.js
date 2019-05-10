@@ -1,6 +1,5 @@
-const { execSync } = require('child_process')
-const { join } = require('path')
-const { writeFileSync, readdir } = require('fs')
+const { join, basename } = require('path')
+const glob = require('glob')
 const ora = require('ora')
 const pify = require('pify')
 const webExt = require('web-ext').default
@@ -13,16 +12,21 @@ const lighthouse = require('lighthouse')
 const { median } = require('simple-statistics')
 const { URL } = require('url')
 const { unzipExtensions, log, drawChart } = require('./utils')
-const { tmpDir, resultsDir, extensionsDir, totalRuns, lhConfig, chromeExtensions, firefoxExtensions, browsers } = require('./settings')
+const {
+  tmpDir,
+  extensionsDir,
+  totalRuns,
+  lhConfig,
+  chromeExtensions,
+  firefoxExtensions,
+  browsers
+} = require('./settings')
 
 const measureExtensionInChrome = async ({ extension, extName, url, extPath }) => {
-  const extDir = join(resultsDir, extension ? extension.name : 'Default')
-  await emptyDir(extDir)
-
   const browser = await PP.launch({
     headless: false,
     defaultViewport: null,
-    args: extPath ? [`--disable-extensions-except=${extPath}`, `--load-extension=${extPath}`] : [],
+    args: extPath ? [`--disable-extensions-except=${extPath}`, `--load-extension=${extPath}`] : []
   })
   const page = await browser.newPage()
   if (extPath) await page.waitFor(11000) // await extension to be installed
@@ -31,11 +35,10 @@ const measureExtensionInChrome = async ({ extension, extName, url, extPath }) =>
     port: new URL(browser.wsEndpoint()).port,
     output: 'json',
     preset: 'perf',
-    disableDeviceEmulation: true,
+    disableDeviceEmulation: true
   }
 
   const { lhr } = await lighthouse(url, lhFlags, lhConfig)
-  writeFileSync(join(extDir, new Date().toJSON() + '.json'), JSON.stringify(lhr, null, '  '))
   const tti = Math.round(lhr.audits['interactive'].rawValue)
 
   await browser.close()
@@ -43,6 +46,7 @@ const measureExtensionInChrome = async ({ extension, extName, url, extPath }) =>
   return {
     name: extName,
     tti,
+    lhr
   }
 }
 
@@ -59,23 +63,23 @@ const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) =
         sourceDir: extPath,
         // comment if connect to default FF
         firefox: PP_FF.executablePath(),
-        args: [`-juggler=${CDPPort}`],
+        args: [`-juggler=${CDPPort}`]
       },
       {
         // These are non CLI related options for each function.
         // You need to specify this one so that your NodeJS application
         // can continue running after web-ext is finished.
-        shouldExitProgram: false,
-      },
+        shouldExitProgram: false
+      }
     )
 
     const browserWSEndpoint = `ws://127.0.0.1:${CDPPort}`
     browser = await PP_FF.connect({
-      browserWSEndpoint,
+      browserWSEndpoint
     })
   } else {
     browser = await PP_FF.launch({
-      headless: false,
+      headless: false
     })
   }
 
@@ -84,7 +88,7 @@ const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) =
 
   // throttle since Firefox can't do that, yet
   await page.goto(url, {
-    waitUntil: ['load'],
+    waitUntil: ['load']
   })
   const result = await page.evaluate(() => {
     return performance.now() // eslint-disable-line
@@ -95,59 +99,60 @@ const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) =
   return {
     name: extName,
     tti: result,
+    lhr: {}
   }
 }
 
 const measureExtension = {
   [browsers.CHROME]: measureExtensionInChrome,
-  [browsers.FIREFOX]: measureExtensionInFirefox,
+  [browsers.FIREFOX]: measureExtensionInFirefox
 }
 
 const extensions = {
   [browsers.CHROME]: chromeExtensions,
-  [browsers.FIREFOX]: firefoxExtensions,
+  [browsers.FIREFOX]: firefoxExtensions
 }
 
-// main
+async function measure(url, options = {}) {
+  const { extSourceDir, browserType = browsers.CHROME } = options
+
+  const extList = extSourceDir ? await getExternalExtensions(extSourceDir) : getPresetExtensions(browserType)
+  await emptyDir(tmpDir)
+  await unzipExtensions({ extensions: extList, browserType })
+
+  const allExtensions = Array.apply(null, { length: totalRuns }).reduce((result = []) => {
+    result.push(...[null].concat(extList))
+    return result
+  }, [])
+
+  const mapper = async extension => {
+    const extName = extension ? extension.name : 'Default (no extension)'
+    const extPath = extension ? join(tmpDir, browserType, extension.name) : null
+
+    try {
+      return measureExtension[browserType]({ extension, extName, url, extPath })
+    } catch (e) {
+      log(e.message, 'red')
+      return {
+        name: extName,
+        tti: 0,
+        lhr: {}
+      }
+    }
+  }
+
+  return await pMap(allExtensions, mapper, { concurrency: 1 })
+}
+
 async function main(url, options = {}) {
   try {
-    const {
-      json,
-      extSourceDir,
-      browserType = browsers.CHROME,
-    } = options
-    const extList = extSourceDir ? await getExternalExtensions(extSourceDir) : getPresetExtensions(browserType)
-    const extDir = extSourceDir || join(extensionsDir, browserType)
+    const { json } = options
 
     log(`URL: ${url}`, 'blue')
 
     const spinner = ora('Processing extensions \n').start()
-    await emptyDir(tmpDir)
-    await unzipExtensions({ extensions: extList, browserType, extensionsDir: extDir })
 
-    const allExtensions = Array.apply(null, { length: totalRuns }).reduce((result = []) => {
-      result.push(...[null].concat(extList))
-      return result
-    }, [])
-
-    const mapper = async extension => {
-      const extName = extension ? extension.name : 'Default (no extension)'
-      const extPath = extension ? join(tmpDir, browserType, extension.name) : null
-
-      try {
-        return measureExtension[browserType]({ extension, extName, url, extPath })
-      } catch (e) {
-        log(e.message, 'red')
-        return {
-          name: extName,
-          tti: 0,
-        }
-      }
-    }
-
-    // execSync('./node_modules/.bin/throttle 3gfast')
-    const data = await pMap(allExtensions, mapper, { concurrency: 1 })
-    // execSync('./node_modules/.bin/throttle --stop')
+    const data = await measure(url, options)
 
     const mergedData = data.reduce((r, d) => {
       r[d.name] = r[d.name] || {}
@@ -155,11 +160,10 @@ async function main(url, options = {}) {
       r[d.name].ttiArr.push(d.tti)
       r[d.name] = {
         name: d.name,
-        ttiArr: r[d.name].ttiArr,
+        ttiArr: r[d.name].ttiArr
       }
       return r
     }, {})
-
     const results = Object.values(mergedData).map(result => {
       const { name, ttiArr } = result
       const medianTTI = median(ttiArr)
@@ -174,7 +178,7 @@ async function main(url, options = {}) {
 
       return {
         name,
-        tti: medianTTI,
+        tti: medianTTI
       }
     })
 
@@ -190,32 +194,38 @@ async function main(url, options = {}) {
       xmin: 0,
       // nearest second
       xmax: Math.ceil(fullWidthInMs / 1000) * 1000,
-      lmargin: maxLabelWidth + 1,
+      lmargin: maxLabelWidth + 1
     })
 
     spinner.succeed()
 
-    return results
+    return data
   } catch (e) {
-    execSync('./node_modules/.bin/throttle --stop')
-    throw new Error(e.message)
+    throw new Error(e)
   }
 }
 
 const getExternalExtensions = async extSourceDir => {
-  const files = await pify(readdir)(extSourceDir)
+  const files = await pify(glob)(`${extSourceDir}/*/*.crx`)
   log('Extensions:', 'green')
   return files.map(file => {
     log(file, 'yellow')
+    console.log(file)
     return {
       source: file,
-      name: file,
+      name: basename(file)
     }
   })
 }
 
 const getPresetExtensions = browserType => {
-  return extensions[browserType]
+  return extensions[browserType].map(({name, source}) => {
+    return {
+      name,
+      source: join(extensionsDir, browserType, source)
+    }
+  })
 }
 
 exports.extensions = main
+exports.measure = measure

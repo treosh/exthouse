@@ -1,7 +1,6 @@
 const { join } = require('path')
 
-exports.tmpDir = join(__dirname, '../tmp')
-exports.resultsDir = join(__dirname, '../results')
+exports.tmpDir = join(process.cwd(), 'tmp')
 exports.extensionsDir = join(__dirname, '../extensions')
 exports.totalRuns = 7
 exports.lhConfig = {

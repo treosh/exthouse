@@ -24,6 +24,8 @@ if (!url || flags.help) {
   console.error('    extensions http://example.com/ --browserType=ff')
   console.error('    extensions http://example.com/ --extSourceDir=/root/my-folder-with-extensions')
   //@todo add totalRuns flag
+  //@todo add browser binary path
+  //@todo add save path for results
 
   return
 }
