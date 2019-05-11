@@ -1,3 +1,5 @@
-const { extensions } = require('./script/execute-with-puppeteer')
+const { launch, measure } = require('./script/execute-with-puppeteer')
 
-module.exports = extensions;
+module.exports = {
+  launch, measure
+};

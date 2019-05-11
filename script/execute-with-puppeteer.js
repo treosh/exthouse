@@ -113,8 +113,8 @@ const extensions = {
   [browsers.FIREFOX]: firefoxExtensions
 }
 
-async function measure(url, options = {}) {
-  const { extSourceDir, browserType = browsers.CHROME } = options
+async function measure(extSourceDir, options = {}) {
+  const { url, browserType = browsers.CHROME } = options
 
   const extList = extSourceDir ? await getExternalExtensions(extSourceDir) : getPresetExtensions(browserType)
   await emptyDir(tmpDir)
@@ -144,15 +144,16 @@ async function measure(url, options = {}) {
   return await pMap(allExtensions, mapper, { concurrency: 1 })
 }
 
-async function main(url, options = {}) {
+async function launch(extSourceDir, options = {}) {
   try {
-    const { json } = options
+    const { url, json } = options
+    const spinner = ora('Processing extensions \n').start()
 
     log(`URL: ${url}`, 'blue')
 
-    const spinner = ora('Processing extensions \n').start()
+    const data = await measure(extSourceDir, options)
 
-    const data = await measure(url, options)
+    spinner.succeed()
 
     const mergedData = data.reduce((r, d) => {
       r[d.name] = r[d.name] || {}
@@ -181,7 +182,6 @@ async function main(url, options = {}) {
         tti: medianTTI
       }
     })
-
     const fullWidthInMs = Math.max(...results.map(result => result.tti))
     const maxLabelWidth = Math.max(...results.map(result => result.name.length))
     const terminalWidth = +process.stdout.columns || 90
@@ -190,14 +190,11 @@ async function main(url, options = {}) {
       // 90% of terminal width to give some right margin
       width: terminalWidth * 0.9 - maxLabelWidth,
       xlabel: 'Time (ms)',
-
       xmin: 0,
       // nearest second
       xmax: Math.ceil(fullWidthInMs / 1000) * 1000,
       lmargin: maxLabelWidth + 1
     })
-
-    spinner.succeed()
 
     return data
   } catch (e) {
@@ -207,10 +204,9 @@ async function main(url, options = {}) {
 
 const getExternalExtensions = async extSourceDir => {
   const files = await pify(glob)(`${extSourceDir}/*/*.crx`)
-  log('Extensions:', 'green')
+  log('External extensions:', 'green')
   return files.map(file => {
     log(file, 'yellow')
-    console.log(file)
     return {
       source: file,
       name: basename(file)
@@ -219,7 +215,9 @@ const getExternalExtensions = async extSourceDir => {
 }
 
 const getPresetExtensions = browserType => {
-  return extensions[browserType].map(({name, source}) => {
+  log('Using preset of extensions:', 'green')
+  return extensions[browserType].map(({ name, source }) => {
+    log(name, 'yellow')
     return {
       name,
       source: join(extensionsDir, browserType, source)
@@ -227,5 +225,5 @@ const getPresetExtensions = browserType => {
   })
 }
 
-exports.extensions = main
+exports.launch = launch
 exports.measure = measure
