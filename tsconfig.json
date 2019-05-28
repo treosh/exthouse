@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "moduleResolution": "node",
+    "module": "commonjs",
+    "target": "es2018",
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true
+  },
+  "include": ["script", "bin", "types"]
+}
