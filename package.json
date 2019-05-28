@@ -6,11 +6,15 @@
   "author": "Artem Denysov <denysov.artem@gmail.com>, Aleksey Kulikov <alekseykulikov@me.com>",
   "license": "MIT",
   "engines": {
-    "node": ">=10.13"
+    "node": ">=10"
+  },
+  "bin": {
+    "extensions": "bin/cli.js"
   },
   "main": "src/index.js",
   "files": [
-    "bin"
+    "bin",
+    "src"
   ],
   "keywords": [
     "web performance",
@@ -24,17 +28,18 @@
     "performance"
   ],
   "scripts": {
-    "start": "node script/execute-with-puppeteer.js && tsc -p .",
-    "test": "eslint script"
+    "start": "node script/execute-with-puppeteer.js",
+    "test": "eslint bin src && tsc -p ."
   },
   "dependencies": {
     "@gribnoysup/wunderbar": "^2.2.2",
     "@sitespeed.io/throttle": "^0.5.1",
     "chalk": "^2.4.2",
+    "commander": "^2.20.0",
     "fs-extra": "^8.0.1",
     "get-port": "^5.0.0",
-    "in-range": "^2.0.0",
-    "lighthouse": "^5.0.0",
+    "in-range": "^1.0.0",
+    "lighthouse": "^3.2.0",
     "lodash": "^4.17.11",
     "ora": "^3.4.0",
     "p-map": "^2.1.0",

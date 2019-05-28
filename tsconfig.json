@@ -6,7 +6,8 @@
     "target": "es2018",
     "allowJs": true,
     "checkJs": true,
-    "strict": true
+    "strict": true,
+    "resolveJsonModule": true
   },
-  "include": ["script", "bin", "types"]
+  "include": ["bin", "src", "types"]
 }
