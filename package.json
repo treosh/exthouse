@@ -1,38 +1,67 @@
 {
+  "name": "extensions",
+  "version": "1.0.0",
+  "description": "Analyze browser extension impact on loading performance",
+  "repository": "https://github.com/treosh/extensions",
+  "author": "Artem Denysov <denysov.artem@gmail.com>, Aleksey Kulikov <alekseykulikov@me.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=10"
+  },
+  "bin": {
+    "extensions": "bin/cli.js"
+  },
+  "main": "src/index.js",
+  "files": [
+    "bin",
+    "src"
+  ],
+  "keywords": [
+    "web performance",
+    "extensions",
+    "browser extension",
+    "chrome extension",
+    "chrome",
+    "firefox",
+    "edge",
+    "cli",
+    "performance"
+  ],
   "scripts": {
     "start": "node script/execute-with-puppeteer.js",
-    "test": "eslint script",
-    "eslint-fix": "eslint script --fix"
+    "test": "eslint bin src && tsc -p ."
   },
   "dependencies": {
-    "@gribnoysup/wunderbar": "^2.2.1",
-    "chalk": "^2.4.1",
-    "fs-extra": "^7.0.1",
-    "get-port": "^4.2.0",
+    "@gribnoysup/wunderbar": "^2.2.2",
+    "chalk": "^2.4.2",
+    "commander": "^2.20.0",
+    "fs-extra": "^8.0.1",
+    "get-port": "^5.0.0",
     "glob": "^7.1.4",
     "in-range": "^1.0.0",
-    "lighthouse": "3.2.0",
+    "lighthouse": "^3.2.0",
     "lodash": "^4.17.11",
     "mkdirp": "^0.5.1",
-    "ora": "^3.0.0",
-    "p-map": "^2.0.0",
+    "ora": "^3.4.0",
+    "p-map": "^2.1.0",
     "percentile": "^1.2.1",
     "pify": "^4.0.1",
-    "puppeteer": "^1.13.0",
+    "puppeteer": "^1.17.0",
     "puppeteer-firefox": "^0.5.0",
-    "simple-statistics": "^6.1.1",
+    "simple-statistics": "^7.0.2",
     "unzip-crx": "^0.2.0",
     "web-ext": "denar90/web-ext#build-args-feature"
   },
   "devDependencies": {
-    "eslint": "^5.9.0",
-    "eslint-config-prettier": "^3.3.0",
+    "eslint": "^5.16.0",
+    "eslint-config-prettier": "^4.3.0",
     "eslint-config-standard": "^12.0.0",
-    "eslint-plugin-import": "^2.14.0",
-    "eslint-plugin-node": "^8.0.0",
-    "eslint-plugin-prettier": "^3.0.0",
-    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-import": "^2.17.3",
+    "eslint-plugin-node": "^9.1.0",
+    "eslint-plugin-prettier": "^3.1.0",
+    "eslint-plugin-promise": "^4.1.1",
     "eslint-plugin-standard": "^4.0.0",
-    "prettier": "^1.15.3"
+    "prettier": "^1.17.1",
+    "typescript": "^3.4.5"
   }
 }

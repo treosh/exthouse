@@ -1,34 +1,23 @@
 #!/usr/bin/env node
 
-// @todo find some cool branding name
-const { launch } = require('../')
+const program = require('commander')
+const { launch } = require('../src')
+const { version } = require('../package.json')
 
-const argv = process.argv.slice(2)
-const flags = {}
-
-argv
-  .filter(f => f.startsWith('-'))
-  .forEach(f => {
-    const keyValue = f.split('=')
-    const flagKey = keyValue[0].replace(/-*/, '')
-    flags[flagKey] = keyValue[1] || true
+program
+  .command('extensions [<extDir>]')
+  .usage('PATH_TO_EXTENSION --url https://treo.sh/')
+  .version(version)
+  .option('--url <url>', 'url to test extension', 'https://example.com/')
+  .option('--json', 'output results in json format')
+  .option('--browserType <type>', 'specify the type of browser')
+  .action((dir = '', cmd) => {
+    launch(dir, cmd)
+      .catch(e => {
+        console.error(e)
+        process.exit(1)
+      })
+      .then(() => process.exit())
   })
 
-const extSourceDir = argv.filter(f => !f.startsWith('-')).shift()
-
-if (!flags.url || flags.help) {
-  console.error('Usage:')
-  console.error('    extensions /root/my-folder-with-extensions')
-  console.error('    extensions --url=http://example.com/ --json')
-  console.error('    extensions --url=http://example.com/ --json')
-  console.error('    extensions --url=http://example.com/ --browserType=ff')
-  //@todo add totalRuns flag
-  //@todo add browser binary path
-  //@todo add save path for results
-
-  return
-}
-
-launch(extSourceDir, flags)
-  .catch(e => console.error(e) && process.exit(1))
-  .then(() => process.exit())
+program.parse(process.argv)

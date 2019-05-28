@@ -116,7 +116,7 @@ const extensions = {
 async function measure(extSourceDir, options = {}) {
   const { url, browserType = browsers.CHROME } = options
 
-  const extList = extSourceDir ? await getExternalExtensions(extSourceDir) : getPresetExtensions(browserType)
+  const extList = extSourceDir.length ? await getExternalExtensions(extSourceDir) : getPresetExtensions(browserType)
   await emptyDir(tmpDir)
   await unzipExtensions({ extensions: extList, browserType })
 
@@ -141,7 +141,7 @@ async function measure(extSourceDir, options = {}) {
     }
   }
 
-  return await pMap(allExtensions, mapper, { concurrency: 1 })
+  return pMap(allExtensions, mapper, { concurrency: 1 })
 }
 
 async function launch(extSourceDir, options = {}) {
@@ -203,7 +203,7 @@ async function launch(extSourceDir, options = {}) {
 }
 
 const getExternalExtensions = async extSourceDir => {
-  const files = await pify(glob)(`${extSourceDir}/*/*.crx`)
+  const files = await pify(glob)(`${extSourceDir}/**/*.crx`)
   log('External extensions:', 'green')
   return files.map(file => {
     log(file, 'yellow')
