@@ -34,9 +34,11 @@ ext-perf [--help] [<command>]
 
 ```
 Options:
-  --url          URL to measure performance impact               [string] [default: false]
-  --json         Print result inot console                       [boolean] [default: false]
-  --browserType  Browser type to test in. Available: chrome, ff  [string] [default: chrome]
+  -V, --version         output the version number
+  --url <url>           url to test extension (default: "https://example.com/")
+  --json                output results in json format
+  --browserType <type>  specify the type of browser (default: "chrome")
+  -h, --help            output usage information
 ```
 
 > Note: In case <extSourceDir> wasn't passed, preset of extensions will be used 
