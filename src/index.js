@@ -1,2 +1,4 @@
-const { extensions } = require('./execute-with-puppeteer')
-module.exports = extensions
+const { launch, measure } = require('./execute-with-puppeteer')
+
+exports.launch = launch
+exports.measure = measure
