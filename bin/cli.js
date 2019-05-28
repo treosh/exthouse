@@ -1,33 +1,25 @@
 #!/usr/bin/env node
 
-// @todo find some cool branding name
-const extensions = require('../')
+const program = require('commander')
+const extensions = require('../src')
+const { version } = require('../package.json')
 
-const argv = process.argv.slice(2)
-const url = argv[0]
-const flags = {}
+program
+  .usage('extensions --url https://treo.sh/')
+  .version(version)
+  .option('--url <url>', 'url to test extension', 'https://example.com/')
+  .option('--json', 'output results in json format')
+  .option('--extSourceDir <path>', 'folder with extensions')
+  .option('--browserType <type>', 'specify the type of browser')
 
-argv
-  .filter(f => f.startsWith('-'))
-  .forEach(f => {
-    var keyValue = f.split('=')
-    const flagKey = keyValue[0].replace(/-*/, '')
-    flags[flagKey] = keyValue[1] || true
-  })
+program.parse(process.argv)
 
-argv.filter(f => !f.startsWith('-')).shift()
-
-if (!url || flags.help) {
-  console.error('Usage:')
-  console.error('    extensions http://example.com/')
-  console.error('    extensions http://example.com/ --json')
-  console.error('    extensions http://example.com/ --browserType=ff')
-  console.error('    extensions http://example.com/ --extSourceDir=/root/my-folder-with-extensions')
-  //@todo add totalRuns flag
-
-  return
-}
+const url = program.url
+const flags = { json: program.json, extSourceDir: program.extSourceDir, browserType: program.browserType }
 
 extensions(url, flags)
-  .catch(e => console.error(e) && process.exit(1))
+  .catch(e => {
+    console.error(e)
+    process.exit(1)
+  })
   .then(() => process.exit())
