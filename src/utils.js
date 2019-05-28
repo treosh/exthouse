@@ -36,11 +36,11 @@ exports.drawChart = (results, options) => {
     const percentile20 = percentile(20, data, item => item.tti)
     let color
 
-    if (inRange(tti, percentile100.tti, percentile65.tti)) {
+    if (inRange(tti, { start: percentile100.tti, end: percentile65.tti })) {
       color = 'red'
-    } else if (inRange(tti, percentile40.tti, percentile65.tti)) {
+    } else if (inRange(tti, { start: percentile40.tti, end: percentile65.tti })) {
       color = '#ff8300'
-    } else if (inRange(tti, percentile20.tti)) {
+    } else if (inRange(tti, { end: percentile20.tti })) {
       color = 'green'
     }
 

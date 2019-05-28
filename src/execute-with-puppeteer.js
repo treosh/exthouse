@@ -35,11 +35,11 @@ const measureExtensionInChrome = async ({ extension, extName, url, extPath }) =>
     port: new URL(browser.wsEndpoint()).port,
     output: 'json',
     preset: 'perf',
-    disableDeviceEmulation: true
+    emulatedFormFactor: 'none'
   }
 
   const { lhr } = await lighthouse(url, lhFlags, lhConfig)
-  const tti = Math.round(lhr.audits['interactive'].rawValue)
+  const tti = Math.round(lhr.audits['interactive'].numericValue)
 
   await browser.close()
 
