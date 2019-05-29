@@ -1,15 +1,15 @@
 {
-  "name": "extensions",
+  "name": "ext-perf",
   "version": "1.0.0",
-  "description": "Analyze browser extension impact on loading performance",
-  "repository": "https://github.com/treosh/extensions",
+  "description": "Analyze browser extension impact on web performance",
+  "repository": "https://github.com/treosh/ext-perf",
   "author": "Artem Denysov <denysov.artem@gmail.com>, Aleksey Kulikov <alekseykulikov@me.com>",
   "license": "MIT",
   "engines": {
     "node": ">=10"
   },
   "bin": {
-    "extensions": "bin/cli.js"
+    "ext-perf": "bin/cli.js"
   },
   "main": "src/index.js",
   "files": [
@@ -29,7 +29,7 @@
   ],
   "scripts": {
     "start": "node script/execute-with-puppeteer.js",
-    "test": "eslint bin src && tsc -p ."
+    "test": "prettier -c bin/** src/** package.json *.md && tsc -p ."
   },
   "dependencies": {
     "@gribnoysup/wunderbar": "^2.2.2",
@@ -53,14 +53,6 @@
     "web-ext": "denar90/web-ext#build-args-feature"
   },
   "devDependencies": {
-    "eslint": "^5.16.0",
-    "eslint-config-prettier": "^4.3.0",
-    "eslint-config-standard": "^12.0.0",
-    "eslint-plugin-import": "^2.17.3",
-    "eslint-plugin-node": "^9.1.0",
-    "eslint-plugin-prettier": "^3.1.0",
-    "eslint-plugin-promise": "^4.1.1",
-    "eslint-plugin-standard": "^4.0.0",
     "prettier": "^1.17.1",
     "typescript": "^3.4.5"
   }

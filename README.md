@@ -1,4 +1,4 @@
-# Web Extensions Performance Analyzer
+# ext-perf: Browser Extensions Performance Analyzer
 
 Analyze extensions impact on loading performance. CLI and node.
 
@@ -10,16 +10,18 @@ Analyze extensions impact on loading performance. CLI and node.
 npx @treosh/ext-perf --url=https://treo.sh
 ```
 
-*([npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7d4bd282b) comes with npm 5.2+ and higher)*
+_([npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7d4bd282b) comes with npm 5.2+ and higher)_
 
 ## Installation
 
 Install CLI using `npm`:
+
 ```bash
 $ npm install --global @treosh/ext-perf
 ```
 
 or via `yarn`:
+
 ```bash
 $ yarn global add @treosh/ext-perf
 ```
@@ -41,7 +43,7 @@ Options:
   -h, --help            output usage information
 ```
 
-> Note: In case <extSourceDir> wasn't passed, preset of extensions will be used 
+> Note: In case <extSourceDir> wasn't passed, preset of extensions will be used
 
 ### Extensions Preset
 
@@ -63,8 +65,7 @@ For Chrome extensions:
 For Firefox extensions:
 
 - open Firefox addons page (e.g. https://addons.mozilla.org/en-US/firefox/addon/grammarly-1/)
-- right click on add button and save-as into `extensions/ff` folder 
-(original answer - https://support.mozilla.org/en-US/questions/1112553)
-
+- right click on add button and save-as into `extensions/ff` folder
+  (original answer - https://support.mozilla.org/en-US/questions/1112553)
 
 Inspired by: https://twitter.com/denar90_/status/1065712688037277696
