@@ -1,33 +1,24 @@
 #!/usr/bin/env node
 
-// @todo find some cool branding name
-const extensions = require('../')
+const program = require('commander')
+const { launch } = require('../src')
+const { browsers } = require('../src/settings')
+const { version } = require('../package.json')
 
-const argv = process.argv.slice(2)
-const url = argv[0]
-const flags = {}
-
-argv
-  .filter(f => f.startsWith('-'))
-  .forEach(f => {
-    var keyValue = f.split('=')
-    const flagKey = keyValue[0].replace(/-*/, '')
-    flags[flagKey] = keyValue[1] || true
+program
+  .command('ext-perf [<extDir>]')
+  .usage('EXTENSION_DIR --url https://treo.sh/')
+  .version(version)
+  .option('--url <url>', 'url to test extension', 'https://example.com/')
+  .option('--json', 'output results in json format')
+  .option('--browserType <type>', 'specify the type of browser', browsers.CHROME)
+  .action((dir = '', cmd) => {
+    launch(dir, cmd)
+      .catch(e => {
+        console.error(e)
+        process.exit(1)
+      })
+      .then(() => process.exit())
   })
 
-argv.filter(f => !f.startsWith('-')).shift()
-
-if (!url || flags.help) {
-  console.error('Usage:')
-  console.error('    extensions http://example.com/')
-  console.error('    extensions http://example.com/ --json')
-  console.error('    extensions http://example.com/ --browserType=ff')
-  console.error('    extensions http://example.com/ --extSourceDir=/root/my-folder-with-extensions')
-  //@todo add totalRuns flag
-
-  return
-}
-
-extensions(url, flags)
-  .catch(e => console.error(e) && process.exit(1))
-  .then(() => process.exit())
+program.parse(process.argv)

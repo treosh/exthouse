@@ -1,6 +1,5 @@
-const { execSync } = require('child_process')
-const { join } = require('path')
-const { writeFileSync, readdir } = require('fs')
+const { join, basename } = require('path')
+const glob = require('glob')
 const ora = require('ora')
 const pify = require('pify')
 const webExt = require('web-ext').default
@@ -13,16 +12,21 @@ const lighthouse = require('lighthouse')
 const { median } = require('simple-statistics')
 const { URL } = require('url')
 const { unzipExtensions, log, drawChart } = require('./utils')
-const { tmpDir, resultsDir, extensionsDir, totalRuns, lhConfig, chromeExtensions, firefoxExtensions, browsers } = require('./settings')
+const {
+  tmpDir,
+  extensionsDir,
+  totalRuns,
+  lhConfig,
+  chromeExtensions,
+  firefoxExtensions,
+  browsers
+} = require('./settings')
 
 const measureExtensionInChrome = async ({ extension, extName, url, extPath }) => {
-  const extDir = join(resultsDir, extension ? extension.name : 'Default')
-  await emptyDir(extDir)
-
   const browser = await PP.launch({
     headless: false,
     defaultViewport: null,
-    args: extPath ? [`--disable-extensions-except=${extPath}`, `--load-extension=${extPath}`] : [],
+    args: extPath ? [`--disable-extensions-except=${extPath}`, `--load-extension=${extPath}`] : []
   })
   const page = await browser.newPage()
   if (extPath) await page.waitFor(11000) // await extension to be installed
@@ -31,18 +35,18 @@ const measureExtensionInChrome = async ({ extension, extName, url, extPath }) =>
     port: new URL(browser.wsEndpoint()).port,
     output: 'json',
     preset: 'perf',
-    disableDeviceEmulation: true,
+    emulatedFormFactor: 'none'
   }
 
   const { lhr } = await lighthouse(url, lhFlags, lhConfig)
-  writeFileSync(join(extDir, new Date().toJSON() + '.json'), JSON.stringify(lhr, null, '  '))
-  const tti = Math.round(lhr.audits['interactive'].rawValue)
+  const tti = Math.round(lhr.audits['interactive'].numericValue)
 
   await browser.close()
 
   return {
     name: extName,
     tti,
+    lhr
   }
 }
 
@@ -59,23 +63,23 @@ const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) =
         sourceDir: extPath,
         // comment if connect to default FF
         firefox: PP_FF.executablePath(),
-        args: [`-juggler=${CDPPort}`],
+        args: [`-juggler=${CDPPort}`]
       },
       {
         // These are non CLI related options for each function.
         // You need to specify this one so that your NodeJS application
         // can continue running after web-ext is finished.
-        shouldExitProgram: false,
-      },
+        shouldExitProgram: false
+      }
     )
 
     const browserWSEndpoint = `ws://127.0.0.1:${CDPPort}`
     browser = await PP_FF.connect({
-      browserWSEndpoint,
+      browserWSEndpoint
     })
   } else {
     browser = await PP_FF.launch({
-      headless: false,
+      headless: false
     })
   }
 
@@ -84,7 +88,7 @@ const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) =
 
   // throttle since Firefox can't do that, yet
   await page.goto(url, {
-    waitUntil: ['load'],
+    waitUntil: ['load']
   })
   const result = await page.evaluate(() => {
     return performance.now() // eslint-disable-line
@@ -95,34 +99,26 @@ const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) =
   return {
     name: extName,
     tti: result,
+    lhr: {}
   }
 }
 
 const measureExtension = {
   [browsers.CHROME]: measureExtensionInChrome,
-  [browsers.FIREFOX]: measureExtensionInFirefox,
+  [browsers.FIREFOX]: measureExtensionInFirefox
 }
 
 const extensions = {
   [browsers.CHROME]: chromeExtensions,
-  [browsers.FIREFOX]: firefoxExtensions,
+  [browsers.FIREFOX]: firefoxExtensions
 }
 
-// main
-async function main(url, options = {}) {
-  const {
-    json,
-    extSourceDir,
-    browserType = browsers.CHROME,
-  } = options
-  const extList = extSourceDir ? await getExternalExtensions(extSourceDir) : getPresetExtensions(browserType)
-  const extDir = extSourceDir || join(extensionsDir, browserType)
+async function measure(extSourceDir, options = {}) {
+  const { url, browserType = browsers.CHROME } = options
 
-  log(`URL: ${url}`, 'blue')
-
-  const spinner = ora('Processing extensions \n').start()
+  const extList = extSourceDir.length ? await getExternalExtensions(extSourceDir) : getPresetExtensions(browserType)
   await emptyDir(tmpDir)
-  await unzipExtensions({ extensions: extList, browserType, extensionsDir: extDir })
+  await unzipExtensions({ extensions: extList, browserType })
 
   const allExtensions = Array.apply(null, { length: totalRuns }).reduce((result = []) => {
     result.push(...[null].concat(extList))
@@ -140,76 +136,94 @@ async function main(url, options = {}) {
       return {
         name: extName,
         tti: 0,
+        lhr: {}
       }
     }
   }
 
-  // execSync('./node_modules/.bin/throttle --start --down 1600 --up 768 --rtt 75')
-  const data = await pMap(allExtensions, mapper, { concurrency: totalRuns })
-  // execSync('./node_modules/.bin/throttle --stop')
+  return pMap(allExtensions, mapper, { concurrency: 1 })
+}
 
-  const mergedData = data.reduce((r, d) => {
-    r[d.name] = r[d.name] || {}
-    r[d.name].ttiArr = r[d.name].ttiArr || []
-    r[d.name].ttiArr.push(d.tti)
-    r[d.name] = {
-      name: d.name,
-      ttiArr: r[d.name].ttiArr,
-    }
-    return r
-  }, {})
+async function launch(extSourceDir, options = {}) {
+  try {
+    const { url, json } = options
+    const spinner = ora('Processing extensions \n').start()
 
-  const results = Object.values(mergedData).map(result => {
-    const { name, ttiArr } = result
-    const medianTTI = median(ttiArr)
-    if (json) {
-      log(`\n${name}:`, 'yellow')
+    log(`URL: ${url}`, 'blue')
 
-      for (const tti of ttiArr) {
-        log(`TTI: ${tti}`)
+    const data = await measure(extSourceDir, options)
+
+    spinner.succeed()
+
+    const mergedData = data.reduce((r, d) => {
+      r[d.name] = r[d.name] || {}
+      r[d.name].ttiArr = r[d.name].ttiArr || []
+      r[d.name].ttiArr.push(d.tti)
+      r[d.name] = {
+        name: d.name,
+        ttiArr: r[d.name].ttiArr
       }
-      log(`TTI (median of ${totalRuns}): ${medianTTI}`, 'rgb(255,131,0)')
-    }
+      return r
+    }, {})
+    const results = Object.values(mergedData).map(result => {
+      const { name, ttiArr } = result
+      const medianTTI = median(ttiArr)
+      if (json) {
+        log(`\n${name}:`, 'yellow')
 
-    return {
-      name,
-      tti: medianTTI,
-    }
-  })
+        for (const tti of ttiArr) {
+          log(`TTI: ${tti}`)
+        }
+        log(`TTI (median of ${totalRuns}): ${medianTTI}`, 'rgb(255,131,0)')
+      }
 
-  const fullWidthInMs = Math.max(...results.map(result => result.tti))
-  const maxLabelWidth = Math.max(...results.map(result => result.name.length))
-  const terminalWidth = +process.stdout.columns || 90
+      return {
+        name,
+        tti: medianTTI
+      }
+    })
+    const fullWidthInMs = Math.max(...results.map(result => result.tti))
+    const maxLabelWidth = Math.max(...results.map(result => result.name.length))
+    const terminalWidth = +process.stdout.columns || 90
 
-  drawChart(results, {
-    // 90% of terminal width to give some right margin
-    width: terminalWidth * 0.9 - maxLabelWidth,
-    xlabel: 'Time (ms)',
+    drawChart(results, {
+      // 90% of terminal width to give some right margin
+      width: terminalWidth * 0.9 - maxLabelWidth,
+      xlabel: 'Time (ms)',
+      xmin: 0,
+      // nearest second
+      xmax: Math.ceil(fullWidthInMs / 1000) * 1000,
+      lmargin: maxLabelWidth + 1
+    })
 
-    xmin: 0,
-    // nearest second
-    xmax: Math.ceil(fullWidthInMs / 1000) * 1000,
-    lmargin: maxLabelWidth + 1,
-  })
-
-  spinner.succeed()
-
-  return results
+    return data
+  } catch (e) {
+    throw new Error(e)
+  }
 }
 
 const getExternalExtensions = async extSourceDir => {
-  const files = await pify(readdir)(extSourceDir)
-  console.log(files)
+  const files = await pify(glob)(`${extSourceDir}/**/*.crx`)
+  log('External extensions:', 'green')
   return files.map(file => {
+    log(file, 'yellow')
     return {
       source: file,
-      name: file,
+      name: basename(file)
     }
   })
 }
 
 const getPresetExtensions = browserType => {
-  return extensions[browserType]
+  log('Using preset of extensions:', 'green')
+  return extensions[browserType].map(({ name, source }) => {
+    log(name, 'yellow')
+    return {
+      name,
+      source: join(extensionsDir, browserType, source)
+    }
+  })
 }
 
-exports.extensions = main
+exports.launch = launch
+exports.measure = measure
