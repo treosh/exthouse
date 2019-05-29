@@ -1,15 +1,15 @@
 {
-  "name": "ext-perf",
+  "name": "unslow",
   "version": "1.0.0",
   "description": "Analyze browser extension impact on web performance",
-  "repository": "https://github.com/treosh/ext-perf",
+  "repository": "https://github.com/treosh/unslow",
   "author": "Artem Denysov <denysov.artem@gmail.com>, Aleksey Kulikov <alekseykulikov@me.com>",
   "license": "MIT",
   "engines": {
     "node": ">=10"
   },
   "bin": {
-    "ext-perf": "bin/cli.js"
+    "unslow": "bin/cli.js"
   },
   "main": "src/index.js",
   "files": [

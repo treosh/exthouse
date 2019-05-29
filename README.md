@@ -1,4 +1,6 @@
-# ext-perf: Browser Extensions Performance Analyzer
+<img align="center" width="542" alt="Analyze browser extension impact on web performance" src="https://user-images.githubusercontent.com/158189/58571339-d0d6de00-8239-11e9-8fad-898781a5933e.png">
+
+# unslow: Browser Extensions Performance Analyzer
 
 Analyze extensions impact on loading performance. CLI and node.
 
@@ -7,7 +9,7 @@ Analyze extensions impact on loading performance. CLI and node.
 ## Quick Start
 
 ```sh
-npx @treosh/ext-perf --url=https://treo.sh
+npx @treosh/unslow --url=https://treo.sh
 ```
 
 _([npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7d4bd282b) comes with npm 5.2+ and higher)_
@@ -17,22 +19,22 @@ _([npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7
 Install CLI using `npm`:
 
 ```bash
-$ npm install --global @treosh/ext-perf
+$ npm install --global @treosh/unslow
 ```
 
 or via `yarn`:
 
 ```bash
-$ yarn global add @treosh/ext-perf
+$ yarn global add @treosh/unslow
 ```
 
 ## Usage:
 
 ```bash
-ext-perf [--help] [<command>]
+unslow [--help] [<command>]
 ```
 
-**`$ ext-perf <extSourceDir>`**
+**`$ unslow <extSourceDir>`**
 
 ```
 Options:

@@ -8,7 +8,7 @@ const { browsers } = require('../src/settings')
 const { version } = require('../package.json')
 
 program
-  .name('ext-perf')
+  .name('unslow')
   .usage('[path/to/extension.crx] [options]')
   .option('-f, --folder <dir>', 'analyze the folder with extensions')
   .option('-r, --runs <number>', 'amount of runs to evaluate median performance value', '5')
@@ -24,8 +24,8 @@ if (!program.args[0] && !program.folder) {
   console.error('')
   console.error('Examples:')
   console.error('')
-  console.error('   ext-perf path/to/extension.crx')
-  console.error('   ext-perf --folder=path/to/extension')
+  console.error('   unslow path/to/extension.crx')
+  console.error('   unslow --folder=path/to/extension')
   console.error('')
   process.exit(1)
 }
