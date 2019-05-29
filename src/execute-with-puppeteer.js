@@ -1,7 +1,6 @@
-const { join, basename } = require('path')
-const glob = require('glob')
+const { join } = require('path')
+const { writeFileSync } = require('fs')
 const ora = require('ora')
-const pify = require('pify')
 const webExt = require('web-ext').default
 const getPort = require('get-port')
 const pMap = require('p-map')
@@ -11,18 +10,17 @@ const PP_FF = require('puppeteer-firefox')
 const lighthouse = require('lighthouse')
 const { median } = require('simple-statistics')
 const { URL } = require('url')
-const { unzipExtensions, log, drawChart } = require('./utils')
+const { unzipExtensions, log, drawChart, getExtensionsFromFolder, getExtensions } = require('./utils')
+const { validateInput } = require('./validator')
 const {
   tmpDir,
-  extensionsDir,
-  totalRuns,
+  totalRuns: defaultTotalRuns,
   lhConfig,
-  chromeExtensions,
-  firefoxExtensions,
-  browsers
+  browsers,
+  output: defaultOutput
 } = require('./settings')
 
-const measureExtensionInChrome = async ({ extension, extName, url, extPath }) => {
+const measureExtensionInChrome = async ({ extName, url, extPath }) => {
   const browser = await PP.launch({
     headless: false,
     defaultViewport: null,
@@ -50,7 +48,7 @@ const measureExtensionInChrome = async ({ extension, extName, url, extPath }) =>
   }
 }
 
-const measureExtensionInFirefox = async ({ extension, extName, url, extPath }) => {
+const measureExtensionInFirefox = async ({ extName, url, extPath }) => {
   let extensionRunners
   let browser
 
@@ -108,19 +106,36 @@ const measureExtension = {
   [browsers.FIREFOX]: measureExtensionInFirefox
 }
 
-const extensions = {
-  [browsers.CHROME]: chromeExtensions,
-  [browsers.FIREFOX]: firefoxExtensions
+const saveToJson = data => {
+  writeFileSync(join(process.cwd(), `unslow-results-${new Date().toJSON()}.json`), JSON.stringify(data, null, '  '))
 }
 
-async function measure(extSourceDir, options = {}) {
-  const { url, browserType = browsers.CHROME } = options
+const showInCLI = results => {
+  const fullWidthInMs = Math.max(...results.map(result => result.tti))
+  const maxLabelWidth = Math.max(...results.map(result => result.name.length))
+  const terminalWidth = +process.stdout.columns || 90
 
-  const extList = extSourceDir.length ? await getExternalExtensions(extSourceDir) : getPresetExtensions(browserType)
+  drawChart(results, {
+    // 90% of terminal width to give some right margin
+    width: terminalWidth * 0.9 - maxLabelWidth,
+    xlabel: 'Time (ms)',
+    xmin: 0,
+    // nearest second
+    xmax: Math.ceil(fullWidthInMs / 1000) * 1000,
+    lmargin: maxLabelWidth + 1
+  })
+}
+
+async function measure(extSource, options = {}) {
+  validateInput(extSource, options)
+
+  const { url, folder, runs = defaultTotalRuns, browserType = browsers.CHROME } = options
+
+  const extList = folder ? await getExtensionsFromFolder(folder, browserType) : await getExtensions(extSource)
   await emptyDir(tmpDir)
   await unzipExtensions({ extensions: extList, browserType })
 
-  const allExtensions = Array.apply(null, { length: totalRuns }).reduce((result = []) => {
+  const allExtensions = Array.apply(null, { length: runs }).reduce((result = []) => {
     result.push(...[null].concat(extList))
     return result
   }, [])
@@ -128,9 +143,8 @@ async function measure(extSourceDir, options = {}) {
   const mapper = async extension => {
     const extName = extension ? extension.name : 'Default (no extension)'
     const extPath = extension ? join(tmpDir, browserType, extension.name) : null
-
     try {
-      return measureExtension[browserType]({ extension, extName, url, extPath })
+      return measureExtension[browserType]({ extName, url, extPath })
     } catch (e) {
       log(e.message, 'red')
       return {
@@ -144,14 +158,14 @@ async function measure(extSourceDir, options = {}) {
   return pMap(allExtensions, mapper, { concurrency: 1 })
 }
 
-async function launch(extSourceDir, options = {}) {
+async function launch(extSource, options = {}) {
   try {
-    const { url, json } = options
+    const { url, output } = options
     const spinner = ora('Processing extensions \n').start()
 
     log(`URL: ${url}`, 'blue')
 
-    const data = await measure(extSourceDir, options)
+    const data = await measure(extSource, options)
 
     spinner.succeed()
 
@@ -168,61 +182,22 @@ async function launch(extSourceDir, options = {}) {
     const results = Object.values(mergedData).map(result => {
       const { name, ttiArr } = result
       const medianTTI = median(ttiArr)
-      if (json) {
-        log(`\n${name}:`, 'yellow')
-
-        for (const tti of ttiArr) {
-          log(`TTI: ${tti}`)
-        }
-        log(`TTI (median of ${totalRuns}): ${medianTTI}`, 'rgb(255,131,0)')
-      }
-
       return {
         name,
         tti: medianTTI
       }
     })
-    const fullWidthInMs = Math.max(...results.map(result => result.tti))
-    const maxLabelWidth = Math.max(...results.map(result => result.name.length))
-    const terminalWidth = +process.stdout.columns || 90
 
-    drawChart(results, {
-      // 90% of terminal width to give some right margin
-      width: terminalWidth * 0.9 - maxLabelWidth,
-      xlabel: 'Time (ms)',
-      xmin: 0,
-      // nearest second
-      xmax: Math.ceil(fullWidthInMs / 1000) * 1000,
-      lmargin: maxLabelWidth + 1
-    })
+    if (output === defaultOutput.json) {
+      saveToJson(data)
+    } else {
+      showInCLI(results)
+    }
 
     return data
   } catch (e) {
     throw new Error(e)
   }
-}
-
-const getExternalExtensions = async extSourceDir => {
-  const files = await pify(glob)(`${extSourceDir}/**/*.crx`)
-  log('External extensions:', 'green')
-  return files.map(file => {
-    log(file, 'yellow')
-    return {
-      source: file,
-      name: basename(file)
-    }
-  })
-}
-
-const getPresetExtensions = browserType => {
-  log('Using preset of extensions:', 'green')
-  return extensions[browserType].map(({ name, source }) => {
-    log(name, 'yellow')
-    return {
-      name,
-      source: join(extensionsDir, browserType, source)
-    }
-  })
 }
 
 exports.launch = launch

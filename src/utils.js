@@ -1,11 +1,29 @@
-const { join } = require('path')
+const { join, basename } = require('path')
+const glob = require('glob')
+const pify = require('pify')
 const chalk = require('chalk')
 const eol = require('os').EOL
 const unzip = require('unzip-crx')
 const inRange = require('in-range')
 const wunderbar = require('@gribnoysup/wunderbar')
 const percentile = require('percentile')
-const { tmpDir } = require('./settings')
+const { tmpDir, browsers } = require('./settings')
+
+const log = (text, color = 'gray') => {
+  console.log(chalk` {${color} ${text}} `)
+}
+
+const getExtensions = async extSource => {
+  const files = await pify(glob)(extSource)
+  log('Extensions:', 'green')
+  return files.map(file => {
+    log(file, 'yellow')
+    return {
+      source: file,
+      name: basename(file)
+    }
+  })
+}
 
 exports.unzipExtensions = ({ extensions, browserType }) => {
   return Promise.all(
@@ -16,9 +34,7 @@ exports.unzipExtensions = ({ extensions, browserType }) => {
   )
 }
 
-exports.log = (text, color = 'gray') => {
-  console.log(chalk` {${color} ${text}} `)
-}
+exports.log = log
 
 exports.drawChart = (results, options) => {
   const data = results.slice(0)
@@ -84,4 +100,14 @@ exports.drawChart = (results, options) => {
   console.log('')
   console.log([chartTop, chart, chartBottom, chartScale].join(eol))
   console.log('')
+}
+
+exports.getExtensions = getExtensions
+
+exports.getExtensionsFromFolder = async (extSourceDir, type) => {
+  const extType = {
+    [browsers.CHROME]: 'crx',
+    [browsers.FIREFOX]: 'xpi'
+  }
+  return await getExtensions(`${extSourceDir}/**/*.${extType[type]}`)
 }
