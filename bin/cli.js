@@ -10,7 +10,7 @@ const { version } = require('../package.json')
 program
   .name('unslow')
   .usage('[path/to/extension.crx] [options]')
-  .option('--runs <number>', 'amount of runs to evaluate median performance value', defaultTotalRuns.toString())
+  .option('--runs <number>', 'amount of runs to evaluate median performance value', defaultTotalRuns)
   .option('--url <url>', 'url to evaluate extension performance', 'https://example.com/')
   .option('--format <format>', `output format options: [${Object.values(formats)}]`, defaultFormat)
   .option('--no-default', 'disable default run')
