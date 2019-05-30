@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const program = require('commander')
+const globby = require('globby')
 const { launch } = require('../src')
 const { log } = require('../src/utils')
 const { browsers, totalRuns, output } = require('../src/settings')
@@ -21,14 +22,14 @@ program.parse(process.argv)
 
 const opts = {
   output: program.output,
-  folder: program.folder,
   url: program.url,
   runs: Number(program.runs),
   browserPath: program.browserPath,
   browserType: program.browserType
 }
 
-launch(program.args[0], opts)
+const files = globby.sync(program.args)
+launch(files, opts)
   .catch(e => {
     log(e.message)
     log(`Run:

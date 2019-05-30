@@ -38,6 +38,7 @@
     "fs-extra": "^8.0.1",
     "get-port": "^5.0.0",
     "glob": "^7.1.4",
+    "globby": "^9.2.0",
     "in-range": "^2.0.0",
     "lighthouse": "5.0.0",
     "lodash": "^4.17.11",
