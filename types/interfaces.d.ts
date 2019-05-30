@@ -1,6 +1,3 @@
 declare module 'lighthouse'
-declare module 'web-ext'
-declare module 'puppeteer-firefox'
-declare module 'percentile'
 declare module 'unzip-crx'
 declare module '@gribnoysup/wunderbar'
