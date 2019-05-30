@@ -16,10 +16,10 @@ const lhConfig = {
  *
  * @param {string} url
  * @param {Extension} ext
- * @return {Promise<{ tti: number, longTasks: Object[] }>}
+ * @return {Promise<{ lhr: {audits: Object} }>}
  */
 
-exports.measureChrome = async function(url, ext) {
+exports.measureChromium = async function(url, ext) {
   const isDefault = ext.name === defaultName
   const browser = await puppeteer.launch({
     headless: isDefault,
@@ -33,18 +33,8 @@ exports.measureChrome = async function(url, ext) {
   }
 
   const { lhr } = await lighthouse(url, lhFlags, lhConfig)
-  const tti = Math.round(lhr.audits.interactive.numericValue || 0)
-  const longTasks = getLongTasks(lhr)
 
   await browser.close()
 
-  return { tti, longTasks }
-}
-
-/** @param {Object} lhr */
-function getLongTasks(lhr) {
-  if (!lhr.audits['main-thread-tasks'] || !lhr.audits['main-thread-tasks'].details) return []
-  /** @type {{ duration: number }[]} */
-  const allTasks = lhr.audits['main-thread-tasks'].details.items
-  return allTasks.filter(task => task.duration >= 50)
+  return { lhr }
 }

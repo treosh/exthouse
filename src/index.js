@@ -1,11 +1,11 @@
-const { join, basename } = require('path')
+const { join, basename, isAbsolute } = require('path')
 const { writeFileSync } = require('fs')
 const { emptyDir } = require('fs-extra')
 const { median } = require('simple-statistics')
 const unzipCrx = require('unzip-crx')
 const { drawChart } = require('./utils/draw-chart')
 const log = require('./utils/logger')
-const { measureChrome } = require('./utils/measure-chrome')
+const { measureChromium } = require('./utils/measure-chromium')
 const { tmpDir, defaultTotalRuns, defaultName, formats } = require('./config')
 
 /**
@@ -49,12 +49,25 @@ exports.launch = async function(extSource, opts) {
   for (const ext of extListWithDefault) {
     log.info('Analyze (%sx): %s', totalRuns, ext.name)
     const ttiValues = []
+    const fcpValues = []
+    const networkReqValues = []
+    const networkRTTValues = []
     const longTasksValues = []
+    const lhrValues = []
     for (let i = 1; i <= totalRuns; i++) {
       try {
-        const data = await measureChrome(opts.url, ext)
-        ttiValues.push(data.tti)
-        longTasksValues.push(data.longTasks)
+        const { lhr } = await measureChromium(opts.url, ext)
+        const tti = Math.round(lhr.audits.interactive.numericValue || 0)
+        const FCP = Math.round(lhr.audits['first-contentful-paint'].numericValue || 0)
+        const networkReq = Math.round(lhr.audits['network-requests'].numericValue || 0)
+        const networkRTT = Math.round(lhr.audits['network-rtt'].numericValue || 0)
+        const longTasks = getLongTasks(lhr)
+        networkReqValues.push(networkReq)
+        networkRTTValues.push(networkRTT)
+        ttiValues.push(tti)
+        longTasksValues.push(longTasks)
+        fcpValues.push(FCP)
+        lhrValues.push(lhr)
       } catch (e) {
         log.error(e)
       }
@@ -62,8 +75,13 @@ exports.launch = async function(extSource, opts) {
     results.push({
       name: ext.name,
       tti: median(ttiValues),
+      fcp: median(fcpValues),
+      networkReq: median(networkReqValues),
+      networkRTT: median(networkRTTValues),
       ttiValues,
-      longTasksValues
+      longTasksValues,
+      lhrValues,
+      fcpValues
     })
   }
 
@@ -76,6 +94,14 @@ exports.launch = async function(extSource, opts) {
   return results
 }
 
+/** @param {Object} lhr */
+function getLongTasks(lhr) {
+  if (!lhr.audits['main-thread-tasks'] || !lhr.audits['main-thread-tasks'].details) return []
+  /** @type {{ duration: number }[]} */
+  const allTasks = lhr.audits['main-thread-tasks'].details.items
+  return allTasks.filter(task => task.duration >= 50)
+}
+
 /**
  * @param {string[]} extSource
  * @return {Extension[]}
@@ -86,7 +112,7 @@ function getExtensions(extSource) {
   if (!files.length) throw new Error('no extensions found')
   return files.map(file => {
     return {
-      source: join(process.cwd(), file),
+      source: isAbsolute(file) ? file : (process.cwd(), file),
       path: join(tmpDir, basename(file)),
       name: basename(file).replace('.crx', '')
     }
