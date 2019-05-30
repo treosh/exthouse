@@ -49,10 +49,12 @@ exports.launch = async function(extSource, opts) {
   for (const ext of extListWithDefault) {
     log.info('Analyze (%sx): %s', totalRuns, ext.name)
     const ttiValues = []
+    const longTasksValues = []
     for (let i = 1; i <= totalRuns; i++) {
       try {
         const data = await measureChrome(opts.url, ext)
         ttiValues.push(data.tti)
+        longTasksValues.push(data.longTasks)
       } catch (e) {
         log.error(e)
       }
@@ -60,7 +62,8 @@ exports.launch = async function(extSource, opts) {
     results.push({
       name: ext.name,
       tti: median(ttiValues),
-      ttiValues
+      ttiValues,
+      longTasksValues
     })
   }
 
