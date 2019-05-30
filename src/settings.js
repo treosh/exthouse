@@ -5,7 +5,7 @@ exports.tmpDir = join(process.cwd(), 'tmp')
 exports.totalRuns = 5
 exports.output = {
   cli: 'cli',
-  json: 'json',
+  json: 'json'
 }
 exports.lhConfig = {
   extends: 'lighthouse:default',

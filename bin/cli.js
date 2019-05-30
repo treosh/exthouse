@@ -29,7 +29,7 @@ const opts = {
 }
 
 const files = globby.sync(program.args)
-launch(files, opts)
+launch(files[0], opts)
   .catch(e => {
     log(e.message)
     log(`Run:

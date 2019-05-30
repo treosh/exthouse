@@ -1,6 +1,5 @@
+// @ts-nocheck
 const { join, basename } = require('path')
-const glob = require('glob')
-const pify = require('pify')
 const chalk = require('chalk')
 const eol = require('os').EOL
 const unzip = require('unzip-crx')
@@ -9,12 +8,21 @@ const wunderbar = require('@gribnoysup/wunderbar')
 const percentile = require('percentile')
 const { tmpDir, browsers } = require('./settings')
 
+/**
+ * @param {string} text
+ * @param {string} color
+ */
+
 const log = (text, color = 'gray') => {
   console.log(chalk` {${color} ${text}} `)
 }
 
+/**
+ * @param {string} extSource
+ */
+
 const getExtensions = async extSource => {
-  const files = await pify(glob)(extSource)
+  const files = [extSource]
   log('Extensions:', 'green')
   return files.map(file => {
     log(file, 'yellow')
@@ -24,6 +32,10 @@ const getExtensions = async extSource => {
     }
   })
 }
+
+/**
+ * @param {{ extensions: Array<string>, browserType: string }} opts
+ */
 
 exports.unzipExtensions = ({ extensions, browserType }) => {
   return Promise.all(

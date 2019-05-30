@@ -12,15 +12,14 @@ const { median } = require('simple-statistics')
 const { URL } = require('url')
 const { unzipExtensions, log, drawChart, getExtensionsFromFolder, getExtensions } = require('./utils')
 const { validateInput } = require('./validator')
-const {
-  tmpDir,
-  totalRuns: defaultTotalRuns,
-  lhConfig,
-  browsers,
-  output: defaultOutput
-} = require('./settings')
+const { tmpDir, totalRuns: defaultTotalRuns, lhConfig, browsers, output: defaultOutput } = require('./settings')
 
-const measureExtensionInChrome = async ({ extName, url, extPath }) => {
+/**
+ * @param {{ extName: string[], url: string, extPath: string }} opts
+ * @return {Promise<Object>}
+ */
+
+async function measureExtensionInChrome({ extName, url, extPath }) {
   const browser = await PP.launch({
     headless: false,
     defaultViewport: null,
@@ -48,7 +47,12 @@ const measureExtensionInChrome = async ({ extName, url, extPath }) => {
   }
 }
 
-const measureExtensionInFirefox = async ({ extName, url, extPath }) => {
+/**
+ * @param {{ extName: string, url: string, extPath: string }} opts
+ * @return {Promise<Object>}
+ */
+
+async function measureExtensionInFirefox({ extName, url, extPath }) {
   let extensionRunners
   let browser
 
@@ -106,14 +110,22 @@ const measureExtension = {
   [browsers.FIREFOX]: measureExtensionInFirefox
 }
 
-const saveToJson = data => {
+/**
+ * @param {Object} data
+ */
+
+function saveToJson(data) {
   writeFileSync(join(process.cwd(), `unslow-results-${new Date().toJSON()}.json`), JSON.stringify(data, null, '  '))
 }
 
-const showInCLI = results => {
+/**
+ * @param {Array<Object>} results
+ */
+
+function showInCLI(results) {
   const fullWidthInMs = Math.max(...results.map(result => result.tti))
   const maxLabelWidth = Math.max(...results.map(result => result.name.length))
-  const terminalWidth = +process.stdout.columns || 90
+  const terminalWidth = process.stdout.columns || 90
 
   drawChart(results, {
     // 90% of terminal width to give some right margin
@@ -126,6 +138,11 @@ const showInCLI = results => {
   })
 }
 
+/**
+ * @param {string} extSource
+ * @param {Object} [options]
+ */
+
 async function measure(extSource, options = {}) {
   validateInput(extSource, options)
 
@@ -135,28 +152,38 @@ async function measure(extSource, options = {}) {
   await emptyDir(tmpDir)
   await unzipExtensions({ extensions: extList, browserType })
 
+  // @ts-ignore
   const allExtensions = Array.apply(null, { length: runs }).reduce((result = []) => {
     result.push(...[null].concat(extList))
     return result
   }, [])
 
-  const mapper = async extension => {
-    const extName = extension ? extension.name : 'Default (no extension)'
-    const extPath = extension ? join(tmpDir, browserType, extension.name) : null
-    try {
-      return measureExtension[browserType]({ extName, url, extPath })
-    } catch (e) {
-      log(e.message, 'red')
-      return {
-        name: extName,
-        tti: 0,
-        lhr: {}
+  return pMap(
+    allExtensions,
+    async extension => {
+      const extName = extension ? extension.name : 'Default (no extension)'
+      const extPath = extension ? join(tmpDir, browserType, extension.name) : ''
+      try {
+        return measureExtension[browserType]({ extName, url, extPath })
+      } catch (e) {
+        log(e.message, 'red')
+        return {
+          name: extName,
+          tti: 0,
+          lhr: {}
+        }
       }
-    }
-  }
-
-  return pMap(allExtensions, mapper, { concurrency: 1 })
+    },
+    { concurrency: 1 }
+  )
 }
+
+/**
+ * Launch analysis.
+ *
+ * @param {string} extSource
+ * @param {Object} [options]
+ */
 
 async function launch(extSource, options = {}) {
   try {
