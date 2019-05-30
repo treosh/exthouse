@@ -1,15 +1,15 @@
 {
-  "name": "extensions",
+  "name": "unslow",
   "version": "1.0.0",
-  "description": "Analyze browser extension impact on loading performance",
-  "repository": "https://github.com/treosh/extensions",
+  "description": "Analyze browser extension impact on web performance",
+  "repository": "https://github.com/treosh/unslow",
   "author": "Artem Denysov <denysov.artem@gmail.com>, Aleksey Kulikov <alekseykulikov@me.com>",
   "license": "MIT",
   "engines": {
     "node": ">=10"
   },
   "bin": {
-    "extensions": "bin/cli.js"
+    "unslow": "bin/cli.js"
   },
   "main": "src/index.js",
   "files": [
@@ -29,38 +29,23 @@
   ],
   "scripts": {
     "start": "node script/execute-with-puppeteer.js",
-    "test": "eslint bin src && tsc -p ."
+    "test": "prettier -c bin/** src/** package.json *.md && tsc -p ."
   },
   "dependencies": {
     "@gribnoysup/wunderbar": "^2.2.2",
     "chalk": "^2.4.2",
     "commander": "^2.20.0",
     "fs-extra": "^8.0.1",
-    "get-port": "^5.0.0",
-    "glob": "^7.1.4",
+    "globby": "^9.2.0",
     "in-range": "^2.0.0",
     "lighthouse": "5.0.0",
-    "lodash": "^4.17.11",
-    "mkdirp": "^0.5.1",
-    "ora": "^3.4.0",
-    "p-map": "^2.1.0",
-    "percentile": "^1.2.1",
-    "pify": "^4.0.1",
     "puppeteer": "^1.17.0",
-    "puppeteer-firefox": "^0.5.0",
     "simple-statistics": "^7.0.2",
-    "unzip-crx": "^0.2.0",
-    "web-ext": "denar90/web-ext#build-args-feature"
+    "unzip-crx": "^0.2.0"
   },
   "devDependencies": {
-    "eslint": "^5.16.0",
-    "eslint-config-prettier": "^4.3.0",
-    "eslint-config-standard": "^12.0.0",
-    "eslint-plugin-import": "^2.17.3",
-    "eslint-plugin-node": "^9.1.0",
-    "eslint-plugin-prettier": "^3.1.0",
-    "eslint-plugin-promise": "^4.1.1",
-    "eslint-plugin-standard": "^4.0.0",
+    "@types/fs-extra": "^7.0.0",
+    "@types/puppeteer": "^1.12.4",
     "prettier": "^1.17.1",
     "typescript": "^3.4.5"
   }

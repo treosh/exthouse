@@ -3,3 +3,4 @@ results
 tmp
 .idea/
 .DS_Store
+unslow*

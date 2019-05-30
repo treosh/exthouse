@@ -1,4 +1,6 @@
-# Web Extensions Performance Analyzer
+<img align="center" width="542" alt="Analyze browser extension impact on web performance" src="https://user-images.githubusercontent.com/158189/58571339-d0d6de00-8239-11e9-8fad-898781a5933e.png">
+
+# unslow: Browser Extensions Performance Analyzer
 
 Analyze extensions impact on loading performance. CLI and node.
 
@@ -7,30 +9,32 @@ Analyze extensions impact on loading performance. CLI and node.
 ## Quick Start
 
 ```sh
-npx @treosh/ext-perf --url=https://treo.sh
+npx @treosh/unslow --url=https://treo.sh
 ```
 
-*([npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7d4bd282b) comes with npm 5.2+ and higher)*
+_([npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7d4bd282b) comes with npm 5.2+ and higher)_
 
 ## Installation
 
 Install CLI using `npm`:
+
 ```bash
-$ npm install --global @treosh/ext-perf
+$ npm install --global @treosh/unslow
 ```
 
 or via `yarn`:
+
 ```bash
-$ yarn global add @treosh/ext-perf
+$ yarn global add @treosh/unslow
 ```
 
 ## Usage:
 
 ```bash
-ext-perf [--help] [<command>]
+unslow [--help] [<command>]
 ```
 
-**`$ ext-perf <extSourceDir>`**
+**`$ unslow <extSourceDir>`**
 
 ```
 Options:
@@ -41,7 +45,7 @@ Options:
   -h, --help            output usage information
 ```
 
-> Note: In case <extSourceDir> wasn't passed, preset of extensions will be used 
+> Note: In case <extSourceDir> wasn't passed, preset of extensions will be used
 
 ### Extensions Preset
 
@@ -63,8 +67,7 @@ For Chrome extensions:
 For Firefox extensions:
 
 - open Firefox addons page (e.g. https://addons.mozilla.org/en-US/firefox/addon/grammarly-1/)
-- right click on add button and save-as into `extensions/ff` folder 
-(original answer - https://support.mozilla.org/en-US/questions/1112553)
-
+- right click on add button and save-as into `extensions/ff` folder
+  (original answer - https://support.mozilla.org/en-US/questions/1112553)
 
 Inspired by: https://twitter.com/denar90_/status/1065712688037277696

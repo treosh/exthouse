@@ -1,24 +1,14 @@
-const { join } = require('path')
-const chalk = require('chalk')
 const eol = require('os').EOL
-const unzip = require('unzip-crx')
 const inRange = require('in-range')
 const wunderbar = require('@gribnoysup/wunderbar')
-const percentile = require('percentile')
-const { tmpDir } = require('./settings')
+const { quantile: percentile } = require('simple-statistics')
 
-exports.unzipExtensions = ({ extensions, browserType }) => {
-  return Promise.all(
-    extensions.map(ext => {
-      const destinationPath = join(tmpDir, browserType, ext.name)
-      return unzip(ext.source, destinationPath)
-    })
-  )
-}
-
-exports.log = (text, color = 'gray') => {
-  console.log(chalk` {${color} ${text}} `)
-}
+/**
+ * @typedef {import('../index').Result} Result
+ *
+ * @param {Result[]} results
+ * @param {{ width: number, xlabel: string, xmin: number, xmax: number, lmargin: number }} options
+ */
 
 exports.drawChart = (results, options) => {
   const data = results.slice(0)
@@ -29,18 +19,18 @@ exports.drawChart = (results, options) => {
   const { lmargin, width, xlabel, xmin, xmax } = options
 
   const normalizedData = data.map(value => {
-    const { tti, name } = value
-    const percentile100 = percentile(100, data, item => item.tti)
-    const percentile65 = percentile(65, data, item => item.tti)
-    const percentile40 = percentile(40, data, item => item.tti)
-    const percentile20 = percentile(20, data, item => item.tti)
+    const { tti, ttiValues, name } = value
+    const p100 = percentile(ttiValues, 1)
+    const p50 = percentile(ttiValues, 0.65)
+    const p10 = percentile(ttiValues, 0.4)
+    const p0 = percentile(ttiValues, 0)
     let color
 
-    if (inRange(tti, { start: percentile100.tti, end: percentile65.tti })) {
+    if (inRange(tti, { start: p100, end: p50 })) {
       color = 'red'
-    } else if (inRange(tti, { start: percentile40.tti, end: percentile65.tti })) {
-      color = '#ff8300'
-    } else if (inRange(tti, { end: percentile20.tti })) {
+    } else if (inRange(tti, { start: p10, end: p50 })) {
+      color = 'yellow'
+    } else if (inRange(tti, { end: p0 })) {
       color = 'green'
     }
 
@@ -51,13 +41,7 @@ exports.drawChart = (results, options) => {
     }
   })
 
-  const { __raw } = wunderbar(normalizedData, {
-    min: xmin,
-    max: xmax,
-    length: width,
-    format: '0,000'
-  })
-
+  const { __raw } = wunderbar(normalizedData, { min: xmin, max: xmax, length: width, format: '0,000' })
   const { normalizedValues, minValueFormatted, maxValueFormatted } = __raw
 
   const yAxis = '│'
@@ -68,6 +52,7 @@ exports.drawChart = (results, options) => {
 
   const chart = normalizedValues
     .reverse()
+    // @ts-ignore
     .map(value => {
       const pad = lmargin - value.label.length
       const paddedLabel = ' '.repeat(pad > 0 ? pad : 0) + value.label
