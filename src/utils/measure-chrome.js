@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer')
 const lighthouse = require('lighthouse')
 const { URL } = require('url')
+const { defaultName } = require('../config')
 
 const lhConfig = {
   extends: 'lighthouse:default',
@@ -10,18 +11,21 @@ const lhConfig = {
 }
 
 /**
- * @param {{ url: string, extPath: string }} opts
+ * @typedef {import('../index').Extension} Extension
+ *
+ * @param {string} url
+ * @param {Extension} ext
  * @return {Promise<{ tti: number, lhr: Object }>}
  */
 
-exports.measureChrome = async function({ url, extPath }) {
+exports.measureChrome = async function(url, ext) {
+  const isDefault = ext.name === defaultName
   const browser = await puppeteer.launch({
-    headless: false,
-    defaultViewport: null,
-    args: extPath ? [`--disable-extensions-except=${extPath}`, `--load-extension=${extPath}`] : []
+    headless: isDefault,
+    args: isDefault ? [] : [`--disable-extensions-except=${ext.path}`, `--load-extension=${ext.path}`]
   })
   const page = await browser.newPage()
-  if (extPath) await page.waitFor(11000) // await extension to be installed
+  if (!isDefault) await page.waitFor(10000) // await extension to be installed
 
   const lhFlags = {
     port: new URL(browser.wsEndpoint()).port,

@@ -6,20 +6,21 @@ const unzipCrx = require('unzip-crx')
 const { drawChart } = require('./utils/draw-chart')
 const log = require('./utils/logger')
 const { measureChrome } = require('./utils/measure-chrome')
-const { tmpDir, defaultTotalRuns, output } = require('./config')
+const { tmpDir, defaultTotalRuns, defaultName, formats } = require('./config')
 
 /**
  * @typedef {Object} Options
  * @property {string} url
  * @property {number} [totalRuns]
- * @property {string} [output]
+ * @property {string} [format]
+ * @property {boolean} [noDefault]
  */
 
 /**
  * @typedef {Object} Extension
  * @property {string} name
- * @property {string} source
- * @property {string} path
+ * @property {string} [source]
+ * @property {string} [path]
  */
 
 /**
@@ -38,36 +39,19 @@ const { tmpDir, defaultTotalRuns, output } = require('./config')
 
 exports.launch = async function(extSource, opts) {
   log.info(`URL: %s`, opts.url)
-  const results = await measure(extSource, opts)
-
-  if (opts.output === output.json) {
-    saveToJson(results)
-  } else {
-    showInCLI(results)
-  }
-
-  return results
-}
-
-/**
- * @param {string[]} extSource
- * @param {Options} opts
- * @return {Promise<Result[]>}
- */
-
-async function measure(extSource, opts) {
   const totalRuns = opts.totalRuns || defaultTotalRuns
   const extList = await getExtensions(extSource)
+  const extListWithDefault = (opts.noDefault ? [] : [getDefaultExt()]).concat(extList)
   const results = []
   await emptyDir(tmpDir)
   await unzipExtensions(extList)
 
-  for (const ext of extList) {
-    log.info('Analyze: %s', ext.name)
+  for (const ext of extListWithDefault) {
+    log.info('Analyze (%sx): %s', totalRuns, ext.name)
     const ttiValues = []
     for (let i = 1; i <= totalRuns; i++) {
       try {
-        const data = await measureChrome({ url: opts.url, extPath: ext.path })
+        const data = await measureChrome(opts.url, ext)
         ttiValues.push(data.tti)
       } catch (e) {
         log.error(e)
@@ -78,6 +62,12 @@ async function measure(extSource, opts) {
       tti: median(ttiValues),
       ttiValues
     })
+  }
+
+  if (opts.format === formats.json) {
+    saveToJson(results)
+  } else {
+    showInCLI(results)
   }
 
   return results
@@ -92,9 +82,20 @@ function getExtensions(extSource) {
   const files = extSource.filter(file => file.endsWith('.crx'))
   if (!files.length) throw new Error('no extensions found')
   return files.map(file => {
-    const name = basename(file)
-    return { source: join(process.cwd(), file), path: join(tmpDir, name), name }
+    return {
+      source: join(process.cwd(), file),
+      path: join(tmpDir, basename(file)),
+      name: basename(file).replace('.crx', '')
+    }
   })
+}
+
+/**
+ * @return {Extension}
+ */
+
+function getDefaultExt() {
+  return { name: defaultName }
 }
 
 /**

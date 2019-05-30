@@ -1,7 +1,7 @@
 const { join } = require('path')
 
 exports.tmpDir = join(process.cwd(), 'tmp')
-exports.output = {
+exports.formats = {
   cli: 'cli',
   json: 'json'
 }
@@ -13,5 +13,6 @@ exports.browsers = {
 
 // defaults
 
+exports.defaultName = 'Default'
 exports.defaultTotalRuns = 5
-exports.defaultOutput = exports.output.cli
+exports.defaultFormat = exports.formats.cli
