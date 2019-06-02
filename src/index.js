@@ -53,6 +53,7 @@ exports.launch = async function(extSource, opts) {
     const networkReqValues = []
     const networkRTTValues = []
     const longTasksValues = []
+    const bootupTasksValues = []
     const lhrValues = []
     for (let i = 1; i <= totalRuns; i++) {
       try {
@@ -62,10 +63,12 @@ exports.launch = async function(extSource, opts) {
         const networkReq = Math.round(lhr.audits['network-requests'].numericValue || 0)
         const networkRTT = Math.round(lhr.audits['network-rtt'].numericValue || 0)
         const longTasks = getLongTasks(lhr)
+        const bootupTasks = getBootupTasks(lhr)
         networkReqValues.push(networkReq)
         networkRTTValues.push(networkRTT)
         ttiValues.push(tti)
         longTasksValues.push(longTasks)
+        bootupTasksValues.push(bootupTasks)
         fcpValues.push(FCP)
         lhrValues.push(lhr)
       } catch (e) {
@@ -80,7 +83,7 @@ exports.launch = async function(extSource, opts) {
       networkRTT: median(networkRTTValues),
       ttiValues,
       longTasksValues,
-      lhrValues,
+      bootupTasksValues,
       fcpValues
     })
   }
@@ -100,6 +103,13 @@ function getLongTasks(lhr) {
   /** @type {{ duration: number }[]} */
   const allTasks = lhr.audits['main-thread-tasks'].details.items
   return allTasks.filter(task => task.duration >= 50)
+}
+
+/** @param {Object} lhr */
+function getBootupTasks(lhr) {
+  if (!lhr.audits['bootup-time'] || !lhr.audits['bootup-time'].details) return []
+  /** @type {{ duration: number }[]} */
+  return lhr.audits['bootup-time'].details.items
 }
 
 /**

@@ -16,3 +16,8 @@ exports.browsers = {
 exports.defaultName = 'Default'
 exports.defaultTotalRuns = 5
 exports.defaultFormat = exports.formats.cli
+exports.defaultCacheType = {
+  cold: 'cold',
+  warm: 'warm',
+  hot: 'hot'
+}
