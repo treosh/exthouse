@@ -1,7 +1,7 @@
 const { join, basename, isAbsolute } = require('path')
 const { writeFileSync } = require('fs')
 const { emptyDir } = require('fs-extra')
-const { median } = require('simple-statistics')
+const { median, sum } = require('simple-statistics')
 const unzipCrx = require('unzip-crx')
 const { drawChart } = require('./utils/draw-chart')
 const log = require('./utils/logger')
@@ -49,9 +49,8 @@ exports.launch = async function(extSource, opts) {
   for (const ext of extListWithDefault) {
     log.info('Analyze (%sx): %s', totalRuns, ext.name)
     const ttiValues = []
+    const fidValues = []
     const fcpValues = []
-    const networkReqValues = []
-    const networkRTTValues = []
     const longTasksValues = []
     const bootupTasksValues = []
     const lhrValues = []
@@ -59,14 +58,12 @@ exports.launch = async function(extSource, opts) {
       try {
         const { lhr } = await measureChromium(opts.url, ext)
         const tti = Math.round(lhr.audits.interactive.numericValue || 0)
+        const FID = Math.round(lhr.audits['max-potential-fid'].numericValue || 0)
         const FCP = Math.round(lhr.audits['first-contentful-paint'].numericValue || 0)
-        const networkReq = Math.round(lhr.audits['network-requests'].numericValue || 0)
-        const networkRTT = Math.round(lhr.audits['network-rtt'].numericValue || 0)
         const longTasks = getLongTasks(lhr)
         const bootupTasks = getBootupTasks(lhr)
-        networkReqValues.push(networkReq)
-        networkRTTValues.push(networkRTT)
         ttiValues.push(tti)
+        fidValues.push(FID)
         longTasksValues.push(longTasks)
         bootupTasksValues.push(bootupTasks)
         fcpValues.push(FCP)
@@ -79,8 +76,31 @@ exports.launch = async function(extSource, opts) {
       name: ext.name,
       tti: median(ttiValues),
       fcp: median(fcpValues),
-      networkReq: median(networkReqValues),
-      networkRTT: median(networkRTTValues),
+      fid: median(fidValues),
+      bootupTasksTotals: bootupTasksValues.reduce((acc, val, i) => {
+        acc[i] = sum(
+          val.map(
+            /**
+             * @param {Object} v
+             * @returns {number}
+             */
+            v => v.total
+          )
+        )
+        return acc
+      }, []),
+      bootupTasksScriptParseCompile: bootupTasksValues.reduce((acc, val, i) => {
+        acc[i] = sum(
+          val.map(
+            /**
+             * @param {Object} v
+             * @returns {number}
+             */
+            v => v.scriptParseCompile
+          )
+        )
+        return acc
+      }, []),
       ttiValues,
       longTasksValues,
       bootupTasksValues,

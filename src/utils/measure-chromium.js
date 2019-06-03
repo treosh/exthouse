@@ -22,7 +22,7 @@ const lhConfig = {
  * @return {Promise<{ lhr: {audits: Object} }>}
  */
 
-exports.measureChromium = async function(url, ext, cacheType = defaultCacheType.hot) {
+exports.measureChromium = async function(url, ext, cacheType = defaultCacheType.cold) {
   const isDefault = ext.name === defaultName
   const opts = {
     output: 'json'
@@ -36,7 +36,8 @@ exports.measureChromium = async function(url, ext, cacheType = defaultCacheType.
   const lhOpts = {
     ...opts,
     port: chrome.port,
-    emulatedFormFactor: 'desktop'
+    emulatedFormFactor: 'desktop',
+    disableStorageReset: cacheType !== defaultCacheType.cold
   }
 
   if (!isDefault) await delay(10000) // await extension to be installed
@@ -47,12 +48,10 @@ exports.measureChromium = async function(url, ext, cacheType = defaultCacheType.
   const browser = await puppeteer.connect({ browserWSEndpoint: webSocketDebuggerUrl })
 
   if (cacheType === defaultCacheType.warm) {
-    await newPage(browser, url)
-    await newPage(browser, url)
+    await lighthouse(url, lhOpts, lhConfig)
   } else if (cacheType === defaultCacheType.hot) {
-    await newPage(browser, url)
-    await newPage(browser, url)
-    await newPage(browser, url)
+    await lighthouse(url, lhOpts, lhConfig)
+    await lighthouse(url, lhOpts, lhConfig)
   }
 
   // Run Lighthouse.
@@ -62,15 +61,4 @@ exports.measureChromium = async function(url, ext, cacheType = defaultCacheType.
   await chrome.kill()
 
   return { lhr }
-}
-
-/**
- * @param {Object} browser
- * @param {string} url
- */
-async function newPage(browser, url) {
-  const page = await browser.newPage()
-  await page.goto(url)
-  await delay(2000)
-  await page.close()
 }
