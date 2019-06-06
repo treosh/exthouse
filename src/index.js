@@ -3,10 +3,9 @@ const { writeFileSync } = require('fs')
 const { emptyDir } = require('fs-extra')
 const { median, sum } = require('simple-statistics')
 const unzipCrx = require('unzip-crx')
-const { drawChart } = require('./utils/draw-chart')
 const log = require('./utils/logger')
 const { measureChromium } = require('./utils/measure-chromium')
-const { tmpDir, defaultTotalRuns, defaultName, formats } = require('./config')
+const { tmpDir, defaultTotalRuns, defaultName } = require('./config')
 
 /**
  * @typedef {Object} Options
@@ -50,24 +49,19 @@ exports.launch = async function(extSource, opts) {
     log.info('Analyze (%sx): %s', totalRuns, ext.name)
     const ttiValues = []
     const fidValues = []
-    const fcpValues = []
     const longTasksValues = []
     const bootupTasksValues = []
-    const lhrValues = []
     for (let i = 1; i <= totalRuns; i++) {
       try {
         const { lhr } = await measureChromium(opts.url, ext)
         const tti = Math.round(lhr.audits.interactive.numericValue || 0)
         const FID = Math.round(lhr.audits['max-potential-fid'].numericValue || 0)
-        const FCP = Math.round(lhr.audits['first-contentful-paint'].numericValue || 0)
         const longTasks = getLongTasks(lhr)
         const bootupTasks = getBootupTasks(lhr)
         ttiValues.push(tti)
         fidValues.push(FID)
         longTasksValues.push(longTasks)
         bootupTasksValues.push(bootupTasks)
-        fcpValues.push(FCP)
-        lhrValues.push(lhr)
       } catch (e) {
         log.error(e)
       }
@@ -75,7 +69,6 @@ exports.launch = async function(extSource, opts) {
     results.push({
       name: ext.name,
       tti: median(ttiValues),
-      fcp: median(fcpValues),
       fid: median(fidValues),
       bootupTasksTotals: bootupTasksValues.reduce((acc, val, i) => {
         acc[i] = sum(
@@ -103,16 +96,11 @@ exports.launch = async function(extSource, opts) {
       }, []),
       ttiValues,
       longTasksValues,
-      bootupTasksValues,
-      fcpValues
+      bootupTasksValues
     })
   }
 
-  if (opts.format === formats.json) {
-    saveToJson(results)
-  } else {
-    showInCLI(results)
-  }
+  saveToJson(results)
 
   return results
 }
@@ -172,24 +160,4 @@ function unzipExtensions(extList) {
 
 function saveToJson(data) {
   writeFileSync(join(process.cwd(), `unslow-results-${new Date().toJSON()}.json`), JSON.stringify(data, null, '  '))
-}
-
-/**
- * @param {Array<Object>} results
- */
-
-function showInCLI(results) {
-  const fullWidthInMs = Math.max(...results.map(result => result.tti))
-  const maxLabelWidth = Math.max(...results.map(result => result.name.length))
-  const terminalWidth = process.stdout.columns || 90
-
-  drawChart(results, {
-    // 90% of terminal width to give some right margin
-    width: terminalWidth * 0.9 - maxLabelWidth,
-    xlabel: 'Time (ms)',
-    xmin: 0,
-    // nearest second
-    xmax: Math.ceil(fullWidthInMs / 1000) * 1000,
-    lmargin: maxLabelWidth + 1
-  })
 }

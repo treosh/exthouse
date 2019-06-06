@@ -4,7 +4,7 @@ const lighthouse = require('lighthouse')
 const request = require('request')
 const { promisify } = require('util')
 const delay = require('delay')
-const { defaultName, defaultCacheType } = require('../config')
+const { defaultName, defaultCacheType, cacheType } = require('../config')
 
 const lhConfig = {
   extends: 'lighthouse:default',
@@ -18,11 +18,11 @@ const lhConfig = {
  *
  * @param {string} url
  * @param {Extension} ext
- * @param {string} [cacheType]
+ * @param {string} [cache]
  * @return {Promise<{ lhr: {audits: Object} }>}
  */
 
-exports.measureChromium = async function(url, ext, cacheType = defaultCacheType.cold) {
+exports.measureChromium = async function(url, ext, cache = defaultCacheType) {
   const isDefault = ext.name === defaultName
   const opts = {
     output: 'json'
@@ -37,7 +37,7 @@ exports.measureChromium = async function(url, ext, cacheType = defaultCacheType.
     ...opts,
     port: chrome.port,
     emulatedFormFactor: 'desktop',
-    disableStorageReset: cacheType !== defaultCacheType.cold
+    disableStorageReset: cache !== defaultCacheType
   }
 
   if (!isDefault) await delay(10000) // await extension to be installed
@@ -47,9 +47,9 @@ exports.measureChromium = async function(url, ext, cacheType = defaultCacheType.
   const { webSocketDebuggerUrl } = JSON.parse(resp.body)
   const browser = await puppeteer.connect({ browserWSEndpoint: webSocketDebuggerUrl })
 
-  if (cacheType === defaultCacheType.warm) {
+  if (cache === cacheType.warm) {
     await lighthouse(url, lhOpts, lhConfig)
-  } else if (cacheType === defaultCacheType.hot) {
+  } else if (cache === cacheType.hot) {
     await lighthouse(url, lhOpts, lhConfig)
     await lighthouse(url, lhOpts, lhConfig)
   }
