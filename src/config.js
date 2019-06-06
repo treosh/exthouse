@@ -22,3 +22,4 @@ exports.defaultName = 'Default'
 exports.defaultTotalRuns = 5
 exports.defaultFormat = exports.formats.json
 exports.defaultCacheType = exports.cacheType.cold
+exports.defaultUrl = 'https://example.com/'
