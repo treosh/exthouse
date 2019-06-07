@@ -5,7 +5,7 @@ const { median } = require('simple-statistics')
 const unzipCrx = require('unzip-crx')
 const log = require('./utils/logger')
 const { measureChromium } = require('./utils/measure-chromium')
-const { tmpDir, defaultTotalRuns, defaultName, defaultAudits } = require('./config')
+const { tmpDir, defaultTotalRuns, defaultName } = require('./config')
 
 /**
  * @typedef {Object} Options
@@ -58,7 +58,6 @@ exports.launch = async function(extSource, opts) {
     for (let i = 1; i <= totalRuns; i++) {
       try {
         const { lhr } = await measureChromium(opts.url, ext)
-        lhr.audits = mapAudits(lhr.audits)
         const FID = Math.round(lhr.audits['max-potential-fid'].numericValue || 0)
         fidValues.push(FID)
         lhrValues[FID] = lhr
@@ -113,18 +112,6 @@ function getDefaultExt() {
 
 function unzipExtensions(extList) {
   return Promise.all(extList.map(ext => unzipCrx(ext.source, ext.path)))
-}
-
-/**
- * @param {Object} audits
- * @return {Object}
- */
-function mapAudits(audits) {
-  return Object.values(audits).reduce((acc, audit) => {
-    const { id } = audit
-    if (defaultAudits.includes(id)) acc[audit.id] = audit
-    return acc
-  }, {})
 }
 
 /**
