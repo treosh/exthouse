@@ -1,12 +1,11 @@
-const { join, basename } = require('path')
+const { join, basename, isAbsolute } = require('path')
 const { writeFileSync } = require('fs')
 const { emptyDir } = require('fs-extra')
-const { median } = require('simple-statistics')
+const { median, sum } = require('simple-statistics')
 const unzipCrx = require('unzip-crx')
-const { drawChart } = require('./utils/draw-chart')
 const log = require('./utils/logger')
-const { measureChrome } = require('./utils/measure-chrome')
-const { tmpDir, defaultTotalRuns, defaultName, formats } = require('./config')
+const { measureChromium } = require('./utils/measure-chromium')
+const { tmpDir, defaultTotalRuns, defaultName } = require('./config')
 
 /**
  * @typedef {Object} Options
@@ -49,10 +48,20 @@ exports.launch = async function(extSource, opts) {
   for (const ext of extListWithDefault) {
     log.info('Analyze (%sx): %s', totalRuns, ext.name)
     const ttiValues = []
+    const fidValues = []
+    const longTasksValues = []
+    const bootupTasksValues = []
     for (let i = 1; i <= totalRuns; i++) {
       try {
-        const data = await measureChrome(opts.url, ext)
-        ttiValues.push(data.tti)
+        const { lhr } = await measureChromium(opts.url, ext)
+        const tti = Math.round(lhr.audits.interactive.numericValue || 0)
+        const FID = Math.round(lhr.audits['max-potential-fid'].numericValue || 0)
+        const longTasks = getLongTasks(lhr)
+        const bootupTasks = getBootupTasks(lhr)
+        ttiValues.push(tti)
+        fidValues.push(FID)
+        longTasksValues.push(longTasks)
+        bootupTasksValues.push(bootupTasks)
       } catch (e) {
         log.error(e)
       }
@@ -60,17 +69,55 @@ exports.launch = async function(extSource, opts) {
     results.push({
       name: ext.name,
       tti: median(ttiValues),
-      ttiValues
+      fid: median(fidValues),
+      bootupTasksTotals: bootupTasksValues.reduce((acc, val, i) => {
+        acc[i] = sum(
+          val.map(
+            /**
+             * @param {Object} v
+             * @returns {number}
+             */
+            v => v.total
+          )
+        )
+        return acc
+      }, []),
+      bootupTasksScriptParseCompile: bootupTasksValues.reduce((acc, val, i) => {
+        acc[i] = sum(
+          val.map(
+            /**
+             * @param {Object} v
+             * @returns {number}
+             */
+            v => v.scriptParseCompile
+          )
+        )
+        return acc
+      }, []),
+      ttiValues,
+      longTasksValues,
+      bootupTasksValues
     })
   }
 
-  if (opts.format === formats.json) {
-    saveToJson(results)
-  } else {
-    showInCLI(results)
-  }
+  saveToJson(results)
 
   return results
+}
+
+/** @param {Object} lhr */
+function getLongTasks(lhr) {
+  if (!lhr.audits['main-thread-tasks'] || !lhr.audits['main-thread-tasks'].details) return []
+  /** @type {{ duration: number }[]} */
+  const allTasks = lhr.audits['main-thread-tasks'].details.items
+  return allTasks.filter(task => task.duration >= 50)
+}
+
+/** @param {Object} lhr */
+function getBootupTasks(lhr) {
+  if (!lhr.audits['bootup-time'] || !lhr.audits['bootup-time'].details) return []
+  /** @type {{ duration: number }[]} */
+  return lhr.audits['bootup-time'].details.items
 }
 
 /**
@@ -83,7 +130,7 @@ function getExtensions(extSource) {
   if (!files.length) throw new Error('no extensions found')
   return files.map(file => {
     return {
-      source: join(process.cwd(), file),
+      source: isAbsolute(file) ? file : (process.cwd(), file),
       path: join(tmpDir, basename(file)),
       name: basename(file).replace('.crx', '')
     }
@@ -113,24 +160,4 @@ function unzipExtensions(extList) {
 
 function saveToJson(data) {
   writeFileSync(join(process.cwd(), `unslow-results-${new Date().toJSON()}.json`), JSON.stringify(data, null, '  '))
-}
-
-/**
- * @param {Array<Object>} results
- */
-
-function showInCLI(results) {
-  const fullWidthInMs = Math.max(...results.map(result => result.tti))
-  const maxLabelWidth = Math.max(...results.map(result => result.name.length))
-  const terminalWidth = process.stdout.columns || 90
-
-  drawChart(results, {
-    // 90% of terminal width to give some right margin
-    width: terminalWidth * 0.9 - maxLabelWidth,
-    xlabel: 'Time (ms)',
-    xmin: 0,
-    // nearest second
-    xmax: Math.ceil(fullWidthInMs / 1000) * 1000,
-    lmargin: maxLabelWidth + 1
-  })
 }

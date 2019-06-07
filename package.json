@@ -34,12 +34,15 @@
   "dependencies": {
     "@gribnoysup/wunderbar": "^2.2.2",
     "chalk": "^2.4.2",
+    "chrome-launcher": "^0.10.7",
     "commander": "^2.20.0",
+    "delay": "^4.2.0",
     "fs-extra": "^8.0.1",
     "globby": "^9.2.0",
     "in-range": "^2.0.0",
     "lighthouse": "5.0.0",
     "puppeteer": "^1.17.0",
+    "request": "^2.88.0",
     "simple-statistics": "^7.0.2",
     "unzip-crx": "^0.2.0"
   },

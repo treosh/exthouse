@@ -2,7 +2,6 @@ const { join } = require('path')
 
 exports.tmpDir = join(process.cwd(), 'tmp')
 exports.formats = {
-  cli: 'cli',
   json: 'json'
 }
 exports.browsers = {
@@ -11,8 +10,15 @@ exports.browsers = {
   edge: 'Edge'
 }
 
+exports.cacheType = {
+  cold: 'cold',
+  warm: 'warm',
+  hot: 'hot'
+}
+
 // defaults
 
 exports.defaultName = 'Default'
 exports.defaultTotalRuns = 5
-exports.defaultFormat = exports.formats.cli
+exports.defaultFormat = exports.formats.json
+exports.defaultCacheType = exports.cacheType.cold
