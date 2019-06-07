@@ -12,6 +12,7 @@ const { tmpDir, defaultTotalRuns, defaultName } = require('./config')
  * @property {string} url
  * @property {number} [totalRuns]
  * @property {string} [format]
+ * @property {boolean} [debug]
  */
 
 /**
@@ -37,6 +38,9 @@ const { tmpDir, defaultTotalRuns, defaultName } = require('./config')
  */
 
 exports.launch = async function(extSource, opts) {
+  if (opts.debug) {
+    log.info('Debug mode is enabled')
+  }
   log.info(`URL: %s`, opts.url)
   const totalRuns = opts.totalRuns || defaultTotalRuns
   const extList = await getExtensions(extSource)
@@ -61,15 +65,19 @@ exports.launch = async function(extSource, opts) {
         log.error(e)
       }
     }
-
-    const medianLhr = lhrValues[median(fidValues)]
-
-    results[ext.name] = medianLhr
-
-    saveToJson(ext.name, medianLhr)
+    results[ext.name] = lhrValues[median(fidValues)]
   }
 
-  return results[ext.name]
+  const extLhr = results[ext.name]
+
+  if (opts.debug) {
+    log.info('Saving all reports')
+    extListWithDefault.forEach(({ name }) => saveToJson(name, results[name]))
+  } else {
+    saveToJson(ext.name, extLhr)
+  }
+
+  return extLhr
 }
 
 /**
