@@ -1,17 +1,11 @@
 const chromeLauncher = require('chrome-launcher')
 const puppeteer = require('puppeteer')
 const lighthouse = require('lighthouse')
+const perfConfig = require('lighthouse/lighthouse-core/config/perf-config')
 const request = require('request')
 const { promisify } = require('util')
 const delay = require('delay')
 const { defaultName, defaultCacheType, cacheType } = require('../config')
-
-const lhConfig = {
-  extends: 'lighthouse:default',
-  settings: {
-    onlyCategories: ['performance']
-  }
-}
 
 /**
  * @typedef {import('../index').Extension} Extension
@@ -48,14 +42,14 @@ exports.measureChromium = async function(url, ext, cache = defaultCacheType) {
   const browser = await puppeteer.connect({ browserWSEndpoint: webSocketDebuggerUrl })
 
   if (cache === cacheType.warm) {
-    await lighthouse(url, lhOpts, lhConfig)
+    await lighthouse(url, lhOpts, perfConfig)
   } else if (cache === cacheType.hot) {
-    await lighthouse(url, lhOpts, lhConfig)
-    await lighthouse(url, lhOpts, lhConfig)
+    await lighthouse(url, lhOpts, perfConfig)
+    await lighthouse(url, lhOpts, perfConfig)
   }
 
   // Run Lighthouse.
-  const { lhr } = await lighthouse(url, lhOpts, lhConfig)
+  const { lhr } = await lighthouse(url, lhOpts, perfConfig)
 
   await browser.disconnect()
   await chrome.kill()
