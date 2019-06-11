@@ -58,10 +58,4 @@ For Chrome extensions:
 - download extension using https://chrome-extension-downloader.com/
 - copy path to the `MY_EXTENTION.crx` and use cli
 
-For Firefox extensions:
-
-- open Firefox addons page (e.g. https://addons.mozilla.org/en-US/firefox/addon/grammarly-1/)
-- right click on add button and save-as into `extensions/ff` folder
-  (original answer - https://support.mozilla.org/en-US/questions/1112553)
-
 Inspired by: https://twitter.com/denar90_/status/1065712688037277696
