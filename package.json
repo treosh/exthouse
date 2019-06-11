@@ -38,13 +38,16 @@
     "commander": "^2.20.0",
     "delay": "^4.2.0",
     "fs-extra": "^8.0.1",
+    "get-port": "^5.0.0",
     "globby": "^9.2.0",
     "in-range": "^2.0.0",
     "lighthouse": "5.0.0",
     "puppeteer": "^1.17.0",
+    "puppeteer-firefox": "^0.5.0",
     "request": "^2.88.0",
     "simple-statistics": "^7.0.2",
-    "unzip-crx": "^0.2.0"
+    "unzip-crx": "^0.2.0",
+    "web-ext": "denar90/web-ext#build-args-feature"
   },
   "devDependencies": {
     "@types/fs-extra": "^7.0.0",

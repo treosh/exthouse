@@ -4,8 +4,8 @@ const { emptyDir } = require('fs-extra')
 const { median } = require('simple-statistics')
 const unzipCrx = require('unzip-crx')
 const log = require('./utils/logger')
-const { measureChromium } = require('./utils/measure-chromium')
-const { tmpDir, defaultTotalRuns, defaultName } = require('./config')
+const { measureFirefox } = require('./utils/measure-firefox')
+const { tmpDir, defaultTotalRuns, defaultName, defaultFilenameExtension } = require('./config')
 
 /**
  * @typedef {Object} Options
@@ -57,7 +57,7 @@ exports.launch = async function(extSource, opts) {
     const lhrValues = {}
     for (let i = 1; i <= totalRuns; i++) {
       try {
-        const { lhr } = await measureChromium(opts.url, ext)
+        const { lhr } = await measureFirefox(opts.url, ext)
         const FID = Math.round(lhr.audits['max-potential-fid'].numericValue || 0)
         fidValues.push(FID)
         lhrValues[FID] = lhr
@@ -86,13 +86,16 @@ exports.launch = async function(extSource, opts) {
  */
 
 function getExtensions(extSource) {
-  const files = extSource.filter(file => file.endsWith('.crx'))
+  const files = extSource.filter(file => file.endsWith(defaultFilenameExtension))
   if (!files.length) throw new Error('no extensions found')
   return files.map(file => {
     return {
       source: isAbsolute(file) ? file : (process.cwd(), file),
-      path: join(tmpDir, basename(file)),
-      name: basename(file).replace('.crx', '')
+      // Firefox doesn't like when installing ext from path like /tmp/adblock_plus.xpi
+      // and throw an error WebExtError: installTemporaryAddon: Error: unknownError: Could not install add-on at '/tmp/adblock_plus.xpi'
+      // better to do it with filename extension (xpi)
+      path: join(tmpDir, basename(file).replace(defaultFilenameExtension, '')),
+      name: basename(file).replace(defaultFilenameExtension, '')
     }
   })
 }

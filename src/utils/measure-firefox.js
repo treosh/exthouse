@@ -4,21 +4,24 @@ const getPort = require('get-port')
 const PP_FF = require('puppeteer-firefox')
 
 /**
- * @param {{ extName: string, url: string, extPath: string }} opts
- * @return {Promise<Object>}
+ * @typedef {import('../index').Extension} Extension
+ *
+ * @param {string} url
+ * @param {Extension} ext
+ * @return {Promise<{ lhr: {audits: Object} }>}
  */
 
-exports.measureFirefox = async function({ extName, url, extPath }) {
+exports.measureFirefox = async function(url, ext) {
   let extensionRunners
   let browser
 
-  if (extPath) {
+  if (ext.path) {
     // @todo wait for https://github.com/sindresorhus/get-port/pull/28 and than use range for 6000 port
     const CDPPort = await getPort()
 
     extensionRunners = await webExt.cmd.run(
       {
-        sourceDir: extPath,
+        sourceDir: ext.path,
         // comment if connect to default FF
         firefox: PP_FF.executablePath(),
         args: [`-juggler=${CDPPort}`]
@@ -42,7 +45,7 @@ exports.measureFirefox = async function({ extName, url, extPath }) {
   }
 
   const page = await browser.newPage()
-  if (extPath) await page.waitFor(11000) // await extension to be installed
+  if (ext.path) await page.waitFor(11000) // await extension to be installed
 
   // throttle since Firefox can't do that, yet
   await page.goto(url, {
@@ -51,12 +54,36 @@ exports.measureFirefox = async function({ extName, url, extPath }) {
   const result = await page.evaluate(() => {
     return performance.now() // eslint-disable-line
   })
-  if (extPath) extensionRunners.exit()
+  if (ext.path) extensionRunners.exit()
   await browser.close()
 
   return {
-    name: extName,
-    tti: result,
-    lhr: {}
+    lhr: {
+      userAgent: '',
+      environment: {},
+      requestedUrl: url,
+      finalUrl: url,
+      fetchTime: new Date().toJSON(),
+      audits: {
+        load: {
+          id: 'load',
+          title: 'On load',
+          score: null,
+          scoreDisplayMode: 'numeric',
+          numericValue: result,
+          displayValue: null
+        },
+        'max-potential-fid': {
+          id: 'max-potential-fid',
+          title: 'Max Potential First Input Delay',
+          description:
+            'The maximum potential First Input Delay that your users could experience is the duration, in milliseconds, of the longest task. [Learn more](https://developers.google.com/web/updates/2018/05/first-input-delay).',
+          score: null,
+          scoreDisplayMode: 'numeric',
+          numericValue: null,
+          displayValue: ''
+        }
+      }
+    }
   }
 }
