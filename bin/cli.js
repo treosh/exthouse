@@ -4,16 +4,16 @@ const program = require('commander')
 const globby = require('globby')
 const { launch } = require('../src')
 const log = require('../src/utils/logger')
-const { formats, defaultTotalRuns, defaultFormat } = require('../src/config')
+const { formats, defaultTotalRuns, defaultFormat, defaultUrl } = require('../src/config')
 const { version } = require('../package.json')
 
 program
   .name('unslow')
   .usage('[path/to/extension.crx] [options]')
   .option('--runs <number>', 'amount of runs to evaluate median performance value', defaultTotalRuns.toString())
-  .option('--url <url>', 'url to evaluate extension performance', 'https://example.com/')
+  .option('--url <url>', 'url to evaluate extension performance', defaultUrl)
   .option('--format <format>', `output format options: [${Object.values(formats)}]`, defaultFormat)
-  .option('--no-default', 'disable default run')
+  .option('--debug', 'debugging')
   .version(version)
 
 program.parse(process.argv)
@@ -26,7 +26,7 @@ const opts = {
   format: program.format,
   url: program.url,
   totalRuns: Number.isInteger(totalRuns) && totalRuns <= 9 && totalRuns >= 0 ? totalRuns : defaultTotalRuns,
-  noDefault: !program.default
+  debug: Boolean(program.debug)
 }
 
 const files = globby.sync(program.args)

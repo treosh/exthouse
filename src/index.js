@@ -1,7 +1,7 @@
 const { join, basename, isAbsolute } = require('path')
 const { writeFileSync } = require('fs')
 const { emptyDir } = require('fs-extra')
-const { median, sum } = require('simple-statistics')
+const { median } = require('simple-statistics')
 const unzipCrx = require('unzip-crx')
 const log = require('./utils/logger')
 const { measureChromium } = require('./utils/measure-chromium')
@@ -12,7 +12,7 @@ const { tmpDir, defaultTotalRuns, defaultName } = require('./config')
  * @property {string} url
  * @property {number} [totalRuns]
  * @property {string} [format]
- * @property {boolean} [noDefault]
+ * @property {boolean} [debug]
  */
 
 /**
@@ -34,90 +34,50 @@ const { tmpDir, defaultTotalRuns, defaultName } = require('./config')
  *
  * @param {string[]} extSource
  * @param {Options} opts
+ * @return {Promise<Object>} - lhr result for analysed extension
  */
 
 exports.launch = async function(extSource, opts) {
+  if (opts.debug) {
+    log.info('Debug mode is enabled')
+  }
   log.info(`URL: %s`, opts.url)
   const totalRuns = opts.totalRuns || defaultTotalRuns
   const extList = await getExtensions(extSource)
-  const extListWithDefault = (opts.noDefault ? [] : [getDefaultExt()]).concat(extList)
-  const results = []
+  const ext = extList[0]
+  const extListWithDefault = [getDefaultExt()].concat(extList)
+  /** @type {{ [key: string]: Object }} */
+  const results = {}
   await emptyDir(tmpDir)
   await unzipExtensions(extList)
-
   for (const ext of extListWithDefault) {
     log.info('Analyze (%sx): %s', totalRuns, ext.name)
-    const ttiValues = []
     const fidValues = []
-    const longTasksValues = []
-    const bootupTasksValues = []
+    /** @type {{ [key: string]: Object }} */
+    const lhrValues = {}
     for (let i = 1; i <= totalRuns; i++) {
       try {
         const { lhr } = await measureChromium(opts.url, ext)
-        const tti = Math.round(lhr.audits.interactive.numericValue || 0)
         const FID = Math.round(lhr.audits['max-potential-fid'].numericValue || 0)
-        const longTasks = getLongTasks(lhr)
-        const bootupTasks = getBootupTasks(lhr)
-        ttiValues.push(tti)
         fidValues.push(FID)
-        longTasksValues.push(longTasks)
-        bootupTasksValues.push(bootupTasks)
+        lhrValues[FID] = lhr
       } catch (e) {
         log.error(e)
       }
     }
-    results.push({
-      name: ext.name,
-      tti: median(ttiValues),
-      fid: median(fidValues),
-      bootupTasksTotals: bootupTasksValues.reduce((acc, val, i) => {
-        acc[i] = sum(
-          val.map(
-            /**
-             * @param {Object} v
-             * @returns {number}
-             */
-            v => v.total
-          )
-        )
-        return acc
-      }, []),
-      bootupTasksScriptParseCompile: bootupTasksValues.reduce((acc, val, i) => {
-        acc[i] = sum(
-          val.map(
-            /**
-             * @param {Object} v
-             * @returns {number}
-             */
-            v => v.scriptParseCompile
-          )
-        )
-        return acc
-      }, []),
-      ttiValues,
-      longTasksValues,
-      bootupTasksValues
-    })
+    results[ext.name] = lhrValues[median(fidValues)]
   }
 
-  saveToJson(results)
+  const extLhr = results[ext.name]
 
-  return results
-}
+  if (opts.debug) {
+    log.info('Saving all reports')
+    extListWithDefault.forEach(({ name }) => saveToJson(name, results[name]))
+  } else {
+    saveToJson(ext.name, extLhr)
+  }
 
-/** @param {Object} lhr */
-function getLongTasks(lhr) {
-  if (!lhr.audits['main-thread-tasks'] || !lhr.audits['main-thread-tasks'].details) return []
-  /** @type {{ duration: number }[]} */
-  const allTasks = lhr.audits['main-thread-tasks'].details.items
-  return allTasks.filter(task => task.duration >= 50)
-}
-
-/** @param {Object} lhr */
-function getBootupTasks(lhr) {
-  if (!lhr.audits['bootup-time'] || !lhr.audits['bootup-time'].details) return []
-  /** @type {{ duration: number }[]} */
-  return lhr.audits['bootup-time'].details.items
+  return extLhr
 }
 
 /**
@@ -155,9 +115,13 @@ function unzipExtensions(extList) {
 }
 
 /**
+ * @param {string} name
  * @param {Object} data
  */
 
-function saveToJson(data) {
-  writeFileSync(join(process.cwd(), `unslow-results-${new Date().toJSON()}.json`), JSON.stringify(data, null, '  '))
+function saveToJson(name, data) {
+  writeFileSync(
+    join(process.cwd(), `unslow-${name}-results-${new Date().toJSON()}.json`),
+    JSON.stringify(data, null, '  ')
+  )
 }
