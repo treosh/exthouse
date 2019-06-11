@@ -8,7 +8,7 @@ const { formats, defaultTotalRuns, defaultFormat, defaultUrl } = require('../src
 const { version } = require('../package.json')
 
 program
-  .name('unslow')
+  .name('exthouse')
   .usage('[path/to/extension.crx] [options]')
   .option('--runs <number>', 'amount of runs to evaluate median performance value', defaultTotalRuns.toString())
   .option('--url <url>', 'url to evaluate extension performance', defaultUrl)
@@ -33,7 +33,7 @@ const files = globby.sync(program.args)
 launch(files, opts)
   .catch(e => {
     log.error(e.message)
-    log.info('\nRun:\n  unslow --help\n')
+    log.info('\nRun:\n  exthouse --help\n')
     process.exit(1)
   })
   .then(() => process.exit())
