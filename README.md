@@ -1,15 +1,11 @@
-<img align="center" width="542" alt="Analyze browser extension impact on web performance" src="https://user-images.githubusercontent.com/158189/58571339-d0d6de00-8239-11e9-8fad-898781a5933e.png">
-
-# exthouse: Browser Extensions Performance Analyzer
+# Exthouse: Browser Extensions Performance Analyzer
 
 Analyze extensions impact on loading performance. CLI and node.
-
-<img align="center" alt="Web Extensions performance analyzer logo" src="https://user-images.githubusercontent.com/6231516/57575027-796bfc00-744b-11e9-80ce-282a97b6d699.png">
 
 ## Quick Start
 
 ```sh
-npx @treosh/exthouse --url=https://treo.sh
+npx @treosh/exthouse <extSourceDir>
 ```
 
 _([npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7d4bd282b) comes with npm 5.2+ and higher)_
@@ -38,14 +34,13 @@ exthouse [--help] [<command>]
 
 ```
 Options:
-  -V, --version         output the version number
-  --url <url>           url to test extension (default: "https://example.com/")
-  --json                output results in json format
-  --browserType <type>  specify the type of browser (default: "chrome")
-  -h, --help            output usage information
+  --runs <number>    amount of runs to evaluate median performance value (default: "5")
+  --url <url>        url to evaluate extension performance (default: "https://example.com/")
+  --format <format>  output format options: [json] (default: "json")
+  --debug            debugging
+  -V, --version      output the version number
+  -h, --help         output usage information
 ```
-
-> Note: In case <extSourceDir> wasn't passed, preset of extensions will be used
 
 ### Extensions Preset
 
@@ -61,8 +56,7 @@ Options:
 For Chrome extensions:
 
 - download extension using https://chrome-extension-downloader.com/
-- put it into `extensions` folder
-- add new property to `extensions.js`
+- copy path to the `MY_EXTENTION.crx` and use cli
 
 For Firefox extensions:
 
