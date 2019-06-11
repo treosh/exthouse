@@ -1,15 +1,15 @@
 {
-  "name": "unslow",
+  "name": "@treosh/exthouse",
   "version": "1.0.0",
   "description": "Analyze browser extension impact on web performance",
-  "repository": "https://github.com/treosh/unslow",
+  "repository": "https://github.com/treosh/exthouse",
   "author": "Artem Denysov <denysov.artem@gmail.com>, Aleksey Kulikov <alekseykulikov@me.com>",
   "license": "MIT",
   "engines": {
     "node": ">=10"
   },
   "bin": {
-    "unslow": "bin/cli.js"
+    "exthouse": "bin/cli.js"
   },
   "main": "src/index.js",
   "files": [

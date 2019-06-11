@@ -1,6 +1,6 @@
 <img align="center" width="542" alt="Analyze browser extension impact on web performance" src="https://user-images.githubusercontent.com/158189/58571339-d0d6de00-8239-11e9-8fad-898781a5933e.png">
 
-# unslow: Browser Extensions Performance Analyzer
+# exthouse: Browser Extensions Performance Analyzer
 
 Analyze extensions impact on loading performance. CLI and node.
 
@@ -9,7 +9,7 @@ Analyze extensions impact on loading performance. CLI and node.
 ## Quick Start
 
 ```sh
-npx @treosh/unslow --url=https://treo.sh
+npx @treosh/exthouse --url=https://treo.sh
 ```
 
 _([npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7d4bd282b) comes with npm 5.2+ and higher)_
@@ -19,22 +19,22 @@ _([npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7
 Install CLI using `npm`:
 
 ```bash
-$ npm install --global @treosh/unslow
+$ npm install --global @treosh/exthouse
 ```
 
 or via `yarn`:
 
 ```bash
-$ yarn global add @treosh/unslow
+$ yarn global add @treosh/exthouse
 ```
 
 ## Usage:
 
 ```bash
-unslow [--help] [<command>]
+exthouse [--help] [<command>]
 ```
 
-**`$ unslow <extSourceDir>`**
+**`$ exthouse <extSourceDir>`**
 
 ```
 Options:

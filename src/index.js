@@ -121,7 +121,7 @@ function unzipExtensions(extList) {
 
 function saveToJson(name, data) {
   writeFileSync(
-    join(process.cwd(), `unslow-${name}-results-${new Date().toJSON()}.json`),
+    join(process.cwd(), `exthouse-${name}-results-${new Date().toJSON()}.json`),
     JSON.stringify(data, null, '  ')
   )
 }
