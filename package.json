@@ -36,18 +36,19 @@
     "chalk": "^2.4.2",
     "chrome-launcher": "^0.10.7",
     "commander": "^2.20.0",
-    "delay": "^4.2.0",
+    "delay": "^4.3.0",
     "fs-extra": "^8.0.1",
     "globby": "^9.2.0",
     "in-range": "^2.0.0",
-    "lighthouse": "5.0.0",
+    "lighthouse": "^5.1.0",
     "simple-statistics": "^7.0.2",
     "unzip-crx": "^0.2.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^7.0.0",
+    "@types/lodash": "^4.14.134",
     "@types/puppeteer": "^1.12.4",
-    "prettier": "^1.17.1",
-    "typescript": "^3.4.5"
+    "prettier": "^1.18.2",
+    "typescript": "^3.5.1"
   }
 }

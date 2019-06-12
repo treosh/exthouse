@@ -16,6 +16,7 @@ const readdir = promisify(fs.readdir)
  * @property {string} url
  * @property {number} [totalRuns]
  * @property {string} [format]
+ * @property {boolean} [disableGather]
  *
  * @typedef {Object} Extension
  * @property {string} name
@@ -25,9 +26,6 @@ const readdir = promisify(fs.readdir)
  * @typedef {Object} LhResult
  * @property {Object} audits
  * @property {{ total: number }} timing
- *
- * @typedef {Object} ExthouseResult
- * @property {Object} audits
  */
 
 /**
@@ -35,19 +33,18 @@ const readdir = promisify(fs.readdir)
  *
  * @param {string[]} extSource
  * @param {Options} opts
- * @return {Promise<ExthouseResult[]>}
+ * @return {Promise<LhResult[]>}
  */
 
 exports.launch = async function(extSource, opts) {
-  await emptyDir(tmpDir)
+  if (!opts.disableGather) await emptyDir(tmpDir)
   const extensions = await getExtensions(extSource)
-  await gatherLighthouseReports(extensions, opts)
+  if (!opts.disableGather) await gatherLighthouseReports(extensions, opts)
 
   const format = opts.format || defaultFormat
   return Promise.all(
     extensions.map(async ext => {
-      const lhResult = await generateExtensionReport(ext)
-
+      const lhResult = await getMedianResult(ext)
       if (format === formats.html) {
         console.log('save html')
       } else {
@@ -88,33 +85,22 @@ async function gatherLighthouseReports(extensions, opts) {
 
 /**
  * @param {Extension} ext
- * @return {Promise<ExthouseResult>}
- */
-
-async function generateExtensionReport(ext) {
-  const defaultResult = await getMedianResult(getDefaultExt())
-  const extResult = await getMedianResult(ext)
-  return {
-    audits: {}
-  }
-}
-
-/**
- * @param {Extension} ext
  * @return {Promise<LhResult>}
  */
 
 async function getMedianResult(ext) {
   const allFiles = await readdir(tmpDir)
-  const extFiles = allFiles.filter(fileName => fileName.startsWith(ext.name))
+  const extFiles = allFiles.filter(fileName => fileName.startsWith(ext.name) && fileName.includes('result'))
   /** @type {LhResult[]} */
   const lhrs = await Promise.all(
     extFiles.map(async extFile => {
-      return JSON.parse(await readFile(join(tmpDir, extFile), 'utf8'))
+      const lhr = await readFile(join(tmpDir, extFile), 'utf8')
+      return JSON.parse(lhr)
     })
   )
   const medianValues = lhrs.map(lhr => getMedianMetric(lhr))
-  return lhrs[median(medianValues)]
+  const medianIndex = medianValues.indexOf(median(medianValues))
+  return lhrs[medianIndex]
 }
 
 /**
@@ -168,12 +154,12 @@ function getDefaultExt() {
 
 /**
  * @param {Extension} ext
- * @param {ExthouseResult} exthouseResult
+ * @param {LhResult} lhr
  */
 
-function saveExthouseResult(ext, exthouseResult) {
+function saveExthouseResult(ext, lhr) {
   const resultPath = join(process.cwd(), `exthouse-${ext.name}-result-${new Date().toJSON()}.json`)
-  return writeFile(resultPath, JSON.stringify(exthouseResult, null, '  '))
+  return writeFile(resultPath, JSON.stringify(lhr, null, '  '))
 }
 
 /**
