@@ -1,7 +1,15 @@
 const chromeLauncher = require('chrome-launcher')
 const lighthouse = require('lighthouse')
 const delay = require('delay')
-const { defaultName, defaultCacheType, cacheType, defaultAudits } = require('../config')
+const { defaultName, defaultCacheType, cacheType } = require('../config')
+
+const lhrConfig = {
+  extends: 'lighthouse:default',
+  settings: {
+    throttlingMethod: 'devtools',
+    onlyAudits: ['interactive', 'bootup-time', 'max-potential-fid', 'long-tasks', 'main-thread-tasks']
+  }
+}
 
 /**
  * @typedef {import('../index').Extension} Extension
@@ -17,14 +25,6 @@ exports.measureChromium = async function(url, ext, cache = defaultCacheType) {
   const opts = {
     output: 'json'
   }
-  const lhrConfig = {
-    extends: 'lighthouse:default',
-    settings: {
-      throttlingMethod: 'devtools',
-      onlyAudits: defaultAudits
-    }
-  }
-
   // Launch chrome using chrome-launcher.
   const chrome = await chromeLauncher.launch({
     ...opts,
