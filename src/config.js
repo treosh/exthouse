@@ -1,6 +1,6 @@
 const { join } = require('path')
 
-exports.tmpDir = join(process.cwd(), 'tmp')
+exports.tmpDir = join(process.cwd(), 'exthouse')
 exports.formats = {
   json: 'json',
   html: 'html'

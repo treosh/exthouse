@@ -6,37 +6,32 @@ const { defaultName, defaultCacheType, cacheType } = require('../config')
 const lhrConfig = {
   extends: 'lighthouse:default',
   settings: {
-    throttlingMethod: 'devtools',
-    onlyAudits: ['interactive', 'bootup-time', 'max-potential-fid', 'long-tasks', 'main-thread-tasks']
+    throttlingMethod: 'devtools', // Lantern does not support warm/hot caching
+    emulatedFormFactor: 'desktop', // It's not possible to install extension on mobile
+    output: 'json',
+    onlyCategories: ['performance']
   }
 }
 
 /**
  * @typedef {import('../index').Extension} Extension
+ * @typedef {import('../index').LhResult} LhResult
  *
  * @param {string} url
  * @param {Extension} ext
  * @param {string} [cache]
- * @return {Promise<{ lhr: {audits: Object} }>}
+ * @return {Promise<{ lhr: LhResult }>}
  */
 
 exports.measureChromium = async function(url, ext, cache = defaultCacheType) {
   const isDefault = ext.name === defaultName
-  const opts = {
-    output: 'json'
-  }
-  // Launch chrome using chrome-launcher.
   const chrome = await chromeLauncher.launch({
-    ...opts,
     chromeFlags: isDefault ? [] : [`--disable-extensions-except=${ext.path}`, `--load-extension=${ext.path}`]
   })
   const lhOpts = {
-    ...opts,
     port: chrome.port,
-    emulatedFormFactor: 'desktop',
     disableStorageReset: cache !== defaultCacheType
   }
-
   if (!isDefault) await delay(10000) // await extension to be installed
 
   if (cache === cacheType.warm) {
