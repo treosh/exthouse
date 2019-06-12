@@ -2,11 +2,13 @@ const { join, basename, isAbsolute } = require('path')
 const fs = require('fs')
 const { promisify } = require('util')
 const { emptyDir } = require('fs-extra')
+const ReportGenerator = require('lighthouse/lighthouse-core/report/report-generator')
+const open = require('open')
 const { median } = require('simple-statistics')
 const unzipCrx = require('unzip-crx')
 const log = require('./utils/logger')
 const { measureChromium } = require('./utils/measure-chromium')
-const { tmpDir, defaultTotalRuns, defaultName, formats, defaultFormat } = require('./config')
+const { tmpDir, defaultTotalRuns, defaultName, formats } = require('./config')
 const writeFile = promisify(fs.writeFile)
 const readFile = promisify(fs.readFile)
 const readdir = promisify(fs.readdir)
@@ -40,16 +42,10 @@ exports.launch = async function(extSource, opts) {
   if (!opts.disableGather) await emptyDir(tmpDir)
   const extensions = await getExtensions(extSource)
   if (!opts.disableGather) await gatherLighthouseReports(extensions, opts)
-
-  const format = opts.format || defaultFormat
   return Promise.all(
     extensions.map(async ext => {
       const lhResult = await getMedianResult(ext)
-      if (format === formats.html) {
-        console.log('save html')
-      } else {
-        await saveExthouseResult(ext, lhResult)
-      }
+      await saveExthouseResult(ext, opts.format, lhResult)
       return lhResult
     })
   )
@@ -153,16 +149,6 @@ function getDefaultExt() {
 }
 
 /**
- * @param {Extension} ext
- * @param {LhResult} lhr
- */
-
-function saveExthouseResult(ext, lhr) {
-  const resultPath = join(process.cwd(), `exthouse-${ext.name}-result-${new Date().toJSON()}.json`)
-  return writeFile(resultPath, JSON.stringify(lhr, null, '  '))
-}
-
-/**
  * Save debug report.
  *
  * @param {Extension} ext
@@ -173,4 +159,19 @@ function saveExthouseResult(ext, lhr) {
 function saveDebugResult(ext, i, lhr) {
   const reportPath = join(tmpDir, `${ext.name}-result-${i}-${new Date().toJSON()}.json`)
   return writeFile(reportPath, JSON.stringify(lhr, null, '  '))
+}
+
+/**
+ * Save `ext` output in `format`.
+ *
+ * @param {Extension} ext
+ * @param {string} format
+ * @param {LhResult} lhr
+ */
+
+async function saveExthouseResult(ext, format, lhr) {
+  const report = format === formats.html ? ReportGenerator.generateReport(lhr, format) : lhr
+  const path = join(process.cwd(), `exthouse-${ext.name}-results-${new Date().toJSON()}.${format}`)
+  await writeFile(path, report)
+  if (format === formats.html) await open(path)
 }
