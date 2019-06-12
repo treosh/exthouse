@@ -41,6 +41,7 @@
     "globby": "^9.2.0",
     "in-range": "^2.0.0",
     "lighthouse": "5.0.0",
+    "open": "^6.3.0",
     "simple-statistics": "^7.0.2",
     "unzip-crx": "^0.2.0"
   },

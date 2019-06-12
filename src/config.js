@@ -15,6 +15,6 @@ exports.cacheType = {
 
 exports.defaultName = 'Default'
 exports.defaultTotalRuns = 1
-exports.defaultFormat = exports.formats.json
+exports.defaultFormat = exports.formats.html
 exports.defaultCacheType = exports.cacheType.cold
 exports.defaultUrl = 'https://example.com/'

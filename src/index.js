@@ -1,11 +1,13 @@
 const { join, basename, isAbsolute } = require('path')
 const { writeFileSync } = require('fs')
 const { emptyDir } = require('fs-extra')
+const ReportGenerator = require('lighthouse/lighthouse-core/report/report-generator')
+const open = require('open')
 const { median } = require('simple-statistics')
 const unzipCrx = require('unzip-crx')
 const log = require('./utils/logger')
 const { measureChromium } = require('./utils/measure-chromium')
-const { tmpDir, defaultTotalRuns, defaultName } = require('./config')
+const { tmpDir, defaultTotalRuns, defaultName, formats } = require('./config')
 
 /**
  * @typedef {Object} Options
@@ -72,9 +74,9 @@ exports.launch = async function(extSource, opts) {
 
   if (opts.debug) {
     log.info('Saving all reports')
-    extListWithDefault.forEach(({ name }) => saveToJson(name, results[name]))
+    extListWithDefault.forEach(({ name }) => output(name, opts.format, results[name]))
   } else {
-    saveToJson(ext.name, extLhr)
+    output(ext.name, opts.format, extLhr)
   }
 
   return extLhr
@@ -115,13 +117,23 @@ function unzipExtensions(extList) {
 }
 
 /**
- * @param {string} name
- * @param {Object} data
+ * @param {string} path
+ * @param {string} report
  */
 
-function saveToJson(name, data) {
-  writeFileSync(
-    join(process.cwd(), `exthouse-${name}-results-${new Date().toJSON()}.json`),
-    JSON.stringify(data, null, '  ')
-  )
+function save(path, report) {
+  writeFileSync(path, report)
+}
+
+/**
+ * @param {string} extName
+ * @param {string} format
+ * @param {Object} lhr
+ */
+async function output(extName, format, lhr) {
+  const report = ReportGenerator.generateReport(lhr, format)
+  const path = join(process.cwd(), `exthouse-${extName}-results-${new Date().toJSON()}.${format}`)
+  save(path, report)
+
+  if (format === formats.html) await open(path, { app: ['google chrome', '--incognito'] })
 }
