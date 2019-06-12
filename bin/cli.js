@@ -13,7 +13,7 @@ program
   .option('--runs <number>', 'amount of runs to evaluate median performance value', defaultTotalRuns.toString())
   .option('--url <url>', 'url to evaluate extension performance', defaultUrl)
   .option('--format <format>', `output format options: [${Object.values(formats)}]`, defaultFormat)
-  .option('--debug', 'debugging')
+  .option('--disableGather', 'disable gathering and use /exthouse to produce results')
   .version(version)
 
 program.parse(process.argv)
@@ -26,7 +26,7 @@ const opts = {
   format: program.format,
   url: program.url,
   totalRuns: Number.isInteger(totalRuns) && totalRuns <= 9 && totalRuns >= 0 ? totalRuns : defaultTotalRuns,
-  debug: Boolean(program.debug)
+  disableGather: program.disableGather
 }
 
 const files = globby.sync(program.args)

@@ -1,15 +1,10 @@
 const { join } = require('path')
 
-exports.tmpDir = join(process.cwd(), 'tmp')
+exports.tmpDir = join(process.cwd(), 'exthouse')
 exports.formats = {
-  json: 'json'
+  json: 'json',
+  html: 'html'
 }
-exports.browsers = {
-  chrome: 'Chrome',
-  firefox: 'Firefox',
-  edge: 'Edge'
-}
-
 exports.cacheType = {
   cold: 'cold',
   warm: 'warm',
@@ -19,8 +14,7 @@ exports.cacheType = {
 // defaults
 
 exports.defaultName = 'Default'
-exports.defaultTotalRuns = 5
-exports.defaultFormat = exports.formats.json
+exports.defaultTotalRuns = 1
+exports.defaultFormat = exports.formats.html
 exports.defaultCacheType = exports.cacheType.cold
 exports.defaultUrl = 'https://example.com/'
-exports.defaultAudits = ['interactive', 'bootup-time', 'max-potential-fid', 'long-tasks', 'main-thread-tasks']
