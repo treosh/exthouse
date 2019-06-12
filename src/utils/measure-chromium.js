@@ -1,8 +1,5 @@
 const chromeLauncher = require('chrome-launcher')
-const puppeteer = require('puppeteer')
 const lighthouse = require('lighthouse')
-const request = require('request')
-const { promisify } = require('util')
 const delay = require('delay')
 const { defaultName, defaultCacheType, cacheType, defaultAudits } = require('../config')
 
@@ -42,11 +39,6 @@ exports.measureChromium = async function(url, ext, cache = defaultCacheType) {
 
   if (!isDefault) await delay(10000) // await extension to be installed
 
-  // Connect to it using puppeteer.connect().
-  const resp = await promisify(request)(`http://localhost:${lhOpts.port}/json/version`)
-  const { webSocketDebuggerUrl } = JSON.parse(resp.body)
-  const browser = await puppeteer.connect({ browserWSEndpoint: webSocketDebuggerUrl })
-
   if (cache === cacheType.warm) {
     await lighthouse(url, lhOpts, lhrConfig)
   } else if (cache === cacheType.hot) {
@@ -56,8 +48,6 @@ exports.measureChromium = async function(url, ext, cache = defaultCacheType) {
 
   // Run Lighthouse.
   const { lhr } = await lighthouse(url, lhOpts, lhrConfig)
-
-  await browser.disconnect()
   await chrome.kill()
 
   return { lhr }
