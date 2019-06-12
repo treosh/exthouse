@@ -74,9 +74,9 @@ exports.launch = async function(extSource, opts) {
 
   if (opts.debug) {
     log.info('Saving all reports')
-    extListWithDefault.forEach(({ name }) => output(name, opts.format, results[name]))
+    extListWithDefault.forEach(async ({ name }) => output(name, opts.format, results[name]))
   } else {
-    output(ext.name, opts.format, extLhr)
+    await output(ext.name, opts.format, extLhr)
   }
 
   return extLhr
