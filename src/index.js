@@ -1,3 +1,4 @@
+const { omit } = require('lodash')
 const { join, basename, isAbsolute } = require('path')
 const fs = require('fs')
 const { promisify } = require('util')
@@ -158,7 +159,8 @@ function getDefaultExt() {
 
 function saveDebugResult(ext, i, lhr) {
   const reportPath = join(tmpDir, `${ext.name}-result-${i}-${new Date().toJSON()}.json`)
-  return writeFile(reportPath, JSON.stringify(lhr, null, '  '))
+  const compactLhr = { ...omit(lhr, ['i18n']), timing: { total: lhr.timing.total } }
+  return writeFile(reportPath, JSON.stringify(compactLhr, null, '  '))
 }
 
 /**
