@@ -1,3 +1,4 @@
+const { startCase } = require('lodash')
 const unzipCrx = require('unzip-crx')
 const { join, basename, isAbsolute } = require('path')
 const { defaultName, tmpDir } = require('../config')
@@ -29,7 +30,20 @@ exports.getExtensions = async extSource => {
 }
 
 /**
- * Check  if `ext` is default.
+ * Get well-formatted `ext` name.
+ *
+ * @param {Extension} ext
+ * @return {string}
+ */
+
+exports.getExtName = ext => {
+  const match = ext.name.match(/_v/)
+  if (!match) return ext.name
+  return startCase(ext.name.substr(0, match.index))
+}
+
+/**
+ * Check if `ext` is default.
  *
  * @param {Extension} ext
  * @return {Boolean}

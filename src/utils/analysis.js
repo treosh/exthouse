@@ -1,6 +1,7 @@
 const { mean: average, compact, sum, round } = require('lodash')
 const { Audit } = require('lighthouse')
 const simpleFormatNumber = require('simple-format-number')
+const { getExtName } = require('./extension')
 
 /**
  * @typedef {import('./extension').Extension} Extension
@@ -42,14 +43,18 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
     },
     categories: {
       ...lhResult.categories,
+      performance: {
+        ...lhResult.categories.performance,
+        title: `Performance with Extension`
+      },
       exthouse: {
         id: 'exthouse',
         title: 'Extension Impact',
-        description: `These audits highlight negative impact of the ${ext.name} extension on user experience.`,
+        description: `These audits highlight the impact of the "${getExtName(ext)}" extension on user experience.`,
         score: categoryScore,
         auditRefs: [
-          { id: newLongTasks.id, weight: 1 },
           { id: maxPotencialFidChange.id, weight: 1 },
+          { id: newLongTasks.id, weight: 1 },
           { id: extensionFiles.id, weight: 1 }
         ]
       }
@@ -103,7 +108,7 @@ function getMaxPotencialFidChange(lhResult, defaultResult) {
   return {
     id: 'exthouse-max-potenctial-fid-change',
     title: 'Max Potencial FID change',
-    description: `The change for longest task duration highlights the impact on potential First Input Delay. [Learn more](https://googlechrome.github.io/lighthouse/viewer/#exthouse)`,
+    description: `The change for the longest task duration highlights the impact on potential First Input Delay. [Learn more](https://developers.google.com/web/updates/2018/05/first-input-delay).`,
     score,
     scoreDisplayMode: 'numeric',
     numericValue,
@@ -130,7 +135,7 @@ function getExtensionFiles(lhResult) {
     id: 'exthouse-extension-files',
     title: 'Extension files',
     description:
-      'Extension files add extra CPU consumption for every URL visit. Bundle resources into one and leverage hot chaching. [Learn more](https://v8.dev/blog/code-caching-for-devs',
+      'Extension files add extra CPU consumption for every URL visit. Bundle resources into one and leverage hot chaching. [Learn more](https://v8.dev/blog/code-caching-for-devs).',
     score,
     scoreDisplayMode: 'numeric',
     numericValue,
