@@ -1,5 +1,6 @@
 const { mean: average, compact, sum, round } = require('lodash')
 const { Audit } = require('lighthouse')
+const simpleFormatNumber = require('simple-format-number')
 
 /**
  * @typedef {import('./extension').Extension} Extension
@@ -82,7 +83,7 @@ function getNewLongTasks(lhResult, defaultResult) {
     score,
     scoreDisplayMode: 'numeric',
     numericValue,
-    displayValue: `${numericValue} ms`, // FIXME: proper LH rounding of ms
+    displayValue: `${formatMsValue(numericValue)} ms`,
     details: Audit.makeTableDetails(headings, longTasks) // FIXME: display only new tasks
   }
 }
@@ -108,7 +109,7 @@ function getMaxPotencialFidChange(lhResult, defaultResult) {
     score,
     scoreDisplayMode: 'numeric',
     numericValue,
-    displayValue: `${numericValue} ms` // FIXME: proper rounding
+    displayValue: `${formatMsValue(numericValue)} ms`
   }
 }
 
@@ -156,4 +157,17 @@ function getLongTasks(lhResult) {
 
 function getMaxPotencialFid(lhResult) {
   return round((lhResult.audits['max-potential-fid'] || {}).numericValue || 0)
+}
+
+/**
+ * Format `value` in milliseconds to a readable string.
+ *
+ * @param {number} value
+ * @return {string}
+ */
+
+function formatMsValue(value) {
+  const val = Math.round(value / 10) * 10
+  const digits = Math.round(val) === val ? 0 : 1
+  return simpleFormatNumber(val, { fractionDigits: digits })
 }

@@ -41,6 +41,7 @@
     "lodash": "^4.17.11",
     "open": "^6.3.0",
     "puppeteer": "^1.17.0",
+    "simple-format-number": "^0.1.2",
     "unzip-crx": "^0.2.0"
   },
   "devDependencies": {
