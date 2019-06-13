@@ -34,9 +34,9 @@ const { getExtName } = require('./extension')
 exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
   const defaultAudit = getDefaultMetrics(defaultResult)
   const newLongTasks = getNewLongTasks(lhResult, defaultAudit.details)
-  const maxPotencialFidChange = getMaxPotencialFidChange(lhResult, defaultAudit.details)
+  const maxPotentialFidChange = getMaxPotentialFidChange(lhResult, defaultAudit.details)
   const extensionExtraFiles = getExtensionExtraFiles(lhResult)
-  const categoryScore = average(compact([newLongTasks.score, maxPotencialFidChange.score, extensionExtraFiles.score]))
+  const categoryScore = average(compact([newLongTasks.score, maxPotentialFidChange.score, extensionExtraFiles.score]))
   return {
     ...lhResult,
     extensionFullName: ext.name,
@@ -44,7 +44,7 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
     audits: {
       ...lhResult.audits,
       [newLongTasks.id]: newLongTasks,
-      [maxPotencialFidChange.id]: maxPotencialFidChange,
+      [maxPotentialFidChange.id]: maxPotentialFidChange,
       [extensionExtraFiles.id]: extensionExtraFiles,
       [defaultAudit.id]: defaultAudit
     },
@@ -56,7 +56,7 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
         description: `These audits show the impact of "${getExtName(ext)}" extension on user experience.`,
         score: categoryScore,
         auditRefs: lhResult.categories.performance.auditRefs.concat([
-          { id: maxPotencialFidChange.id, weight: 1, group: 'diagnostics' },
+          { id: maxPotentialFidChange.id, weight: 1, group: 'diagnostics' },
           { id: newLongTasks.id, weight: 1, group: 'diagnostics' },
           { id: extensionExtraFiles.id, weight: 1, group: 'diagnostics' },
           { id: defaultAudit.id, weight: 0 }
@@ -130,20 +130,20 @@ function getNewLongTasks(lhResult, defaultDefails) {
 }
 
 /**
- * Get the change of `audits["max-potencial-fid"]`.
+ * Get the change of `audits["max-potential-fid"]`.
  *
  * @param {LhResult} lhResult
  * @param {DefaultDetails} defaultDefails
  * @return {LhAuditResult}
  */
 
-function getMaxPotencialFidChange(lhResult, defaultDefails) {
+function getMaxPotentialFidChange(lhResult, defaultDefails) {
   const maxFid = getMaxPotencialFid(lhResult)
   const numericValue = maxFid > defaultDefails.maxPotentcialFid ? maxFid - defaultDefails.maxPotentcialFid : 0
   const score = Audit.computeLogNormalScore(numericValue, 50, 250)
   return {
-    id: 'exthouse-max-potenctial-fid-change',
-    title: 'Max Potencial FID Change',
+    id: 'exthouse-max-potential-fid-change',
+    title: 'Max Potential FID Change',
     description: `The change for the longest task duration highlights the impact on potential First Input Delay. [Learn more](https://developers.google.com/web/updates/2018/05/first-input-delay).`,
     score,
     scoreDisplayMode: 'numeric',
