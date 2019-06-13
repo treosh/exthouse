@@ -1,29 +1,25 @@
 const { omit } = require('lodash')
-const { join, basename, isAbsolute } = require('path')
+const { join } = require('path')
 const fs = require('fs')
 const { promisify } = require('util')
 const { emptyDir } = require('fs-extra')
 const ReportGenerator = require('lighthouse/lighthouse-core/report/report-generator')
 const open = require('open')
-const unzipCrx = require('unzip-crx')
 const log = require('./utils/logger')
+const { getExtensions } = require('./utils/extension')
 const { measureChromium } = require('./utils/measure-chromium')
-const { tmpDir, defaultTotalRuns, defaultName, formats } = require('./config')
+const { tmpDir, defaultTotalRuns, formats } = require('./config')
 const writeFile = promisify(fs.writeFile)
 const readFile = promisify(fs.readFile)
 const readdir = promisify(fs.readdir)
 
 /**
+ * @typedef {import('./utils/extension').Extension} Extension
  * @typedef {Object} Options
  * @property {string} url
  * @property {number} [totalRuns]
  * @property {string} [format]
  * @property {boolean} [disableGather]
- *
- * @typedef {Object} Extension
- * @property {string} name
- * @property {string} [source]
- * @property {string} [path]
  *
  * @typedef {Object} LhResult
  * @property {Object} audits
@@ -123,44 +119,6 @@ function getDiscreateMedian(values) {
   const sortedValues = values.concat([]).sort((a, b) => a - b)
   const half = Math.floor(values.length / 2)
   return sortedValues[half]
-}
-
-/**
- * @param {string[]} extSource
- * @return {Promise<Extension[]>}
- */
-
-async function getExtensions(extSource) {
-  const files = extSource.filter(file => file.endsWith('.crx'))
-  if (!files.length) throw new Error('no extensions found')
-  const extList = files.map(file => {
-    return {
-      source: isAbsolute(file) ? file : (process.cwd(), file),
-      path: join(tmpDir, basename(file)),
-      name: basename(file).replace('.crx', '')
-    }
-  })
-  await unzipExtensions(extList)
-  return [getDefaultExt()].concat(extList)
-}
-
-/**
- * @param {Extension[]} extList
- * @return {Promise}
- */
-
-function unzipExtensions(extList) {
-  return Promise.all(extList.map(ext => unzipCrx(ext.source, ext.path)))
-}
-
-/**
- * Get default extension.
- *
- * @return {Extension}
- */
-
-function getDefaultExt() {
-  return { name: defaultName }
 }
 
 /**

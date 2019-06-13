@@ -1,7 +1,8 @@
 const puppeteer = require('puppeteer')
 const lighthouse = require('lighthouse')
 const delay = require('delay')
-const { defaultName, defaultCacheType, cacheType } = require('../config')
+const { defaultCacheType, cacheType } = require('../config')
+const { isDefaultExt } = require('./extension')
 
 const lhrConfig = {
   extends: 'lighthouse:default',
@@ -26,7 +27,7 @@ const lhrConfig = {
 }
 
 /**
- * @typedef {import('../index').Extension} Extension
+ * @typedef {import('./extension').Extension} Extension
  * @typedef {import('../index').LhResult} LhResult
  *
  * @param {string} url
@@ -36,16 +37,15 @@ const lhrConfig = {
  */
 
 exports.measureChromium = async function(url, ext, cache = defaultCacheType) {
-  const isDefault = ext.name === defaultName
   const browser = await puppeteer.launch({
-    headless: isDefault, // headless mode is not possible for extensions
-    args: isDefault ? [] : [`--disable-extensions-except=${ext.path}`, `--load-extension=${ext.path}`]
+    headless: isDefaultExt(ext), // headless mode is not possible for extensions
+    args: isDefaultExt(ext) ? [] : [`--disable-extensions-except=${ext.path}`, `--load-extension=${ext.path}`]
   })
   const lhOpts = {
     port: new URL(browser.wsEndpoint()).port,
     disableStorageReset: cache !== defaultCacheType
   }
-  if (!isDefault) await delay(10000) // await extension to be installed
+  if (!isDefaultExt(ext)) await delay(10000) // await extension to be installed
 
   if (cache === cacheType.warm) {
     await lighthouse(url, lhOpts, lhrConfig)
