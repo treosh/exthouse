@@ -16,6 +16,10 @@ const { getExtName } = require('./extension')
  * @property {number} [numericValue]
  * @property {string} [displayValue]
  * @property {Object} [details]
+ *
+ * @typedef {Object} DefaultDetails
+ * @property {number} maxPotentcialFid
+ * @property {{ startTime: number, duration: number }[]} longTasks
  */
 
 /**
@@ -28,8 +32,9 @@ const { getExtName } = require('./extension')
  */
 
 exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
-  const newLongTasks = getNewLongTasks(lhResult, defaultResult)
-  const maxPotencialFidChange = getMaxPotencialFidChange(lhResult, defaultResult)
+  const defaultAudit = getDefaultMetrics(defaultResult)
+  const newLongTasks = getNewLongTasks(lhResult, defaultAudit.details)
+  const maxPotencialFidChange = getMaxPotencialFidChange(lhResult, defaultAudit.details)
   const extensionFiles = getExtensionFiles(lhResult)
   const categoryScore = average(compact([newLongTasks.score, maxPotencialFidChange.score, extensionFiles.score]))
   return {
@@ -39,7 +44,8 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
       ...lhResult.audits,
       [newLongTasks.id]: newLongTasks,
       [maxPotencialFidChange.id]: maxPotencialFidChange,
-      [extensionFiles.id]: extensionFiles
+      [extensionFiles.id]: extensionFiles,
+      [defaultAudit.id]: defaultAudit
     },
     categories: {
       ...lhResult.categories,
@@ -50,7 +56,8 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
         auditRefs: lhResult.categories.performance.auditRefs.concat([
           { id: maxPotencialFidChange.id, weight: 1, group: 'diagnostics' },
           { id: newLongTasks.id, weight: 1, group: 'diagnostics' },
-          { id: extensionFiles.id, weight: 1, group: 'diagnostics' }
+          { id: extensionFiles.id, weight: 1, group: 'diagnostics' },
+          { id: defaultAudit.id, weight: 0 }
         ])
       }
     },
@@ -65,19 +72,39 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
 }
 
 /**
- * Find new long tasks from `audits["main-thread-tasks"]`.
+ * Get data from `default` run for future analysis.
  *
- * @param {LhResult} lhResult
  * @param {LhResult} defaultResult
  * @return {LhAuditResult}
  */
 
-function getNewLongTasks(lhResult, defaultResult) {
+function getDefaultMetrics(defaultResult) {
+  return {
+    id: 'exthouse-default-metrics',
+    title: 'Default data without extension.',
+    description: `Use this data to compare metrics with a run without extension.`,
+    score: null,
+    scoreDisplayMode: 'informative',
+    details: {
+      maxPotentcialFid: getMaxPotencialFid(defaultResult),
+      longTasks: getLongTasks(defaultResult)
+    }
+  }
+}
+
+/**
+ * Find new long tasks from `audits["main-thread-tasks"]`.
+ *
+ * @param {LhResult} lhResult
+ * @param {DefaultDetails} defaultDefails
+ * @return {LhAuditResult}
+ */
+
+function getNewLongTasks(lhResult, defaultDefails) {
   const longTasks = getLongTasks(lhResult)
-  const defaultLongTasks = getLongTasks(defaultResult)
-  const numericValue = sum(longTasks.map(task => task.duration)) - sum(defaultLongTasks.map(task => task.duration))
-  const opts = { scorePODR: 50, scoreMedian: 250 }
-  const score = Audit.computeLogNormalScore(numericValue, opts.scorePODR, opts.scoreMedian)
+  const numericValue =
+    sum(longTasks.map(task => task.duration)) - sum(defaultDefails.longTasks.map(task => task.duration))
+  const score = Audit.computeLogNormalScore(numericValue, 50, 250)
   const headings = [
     { key: 'startTime', itemType: 'text', text: 'Task start time' },
     { key: 'duration', itemType: 'text', text: 'Duration' }
@@ -98,18 +125,17 @@ function getNewLongTasks(lhResult, defaultResult) {
  * Get the change of `audits["max-potencial-fid"]`.
  *
  * @param {LhResult} lhResult
- * @param {LhResult} defaultResult
+ * @param {DefaultDetails} defaultDefails
  * @return {LhAuditResult}
  */
 
-function getMaxPotencialFidChange(lhResult, defaultResult) {
+function getMaxPotencialFidChange(lhResult, defaultDefails) {
   const maxFid = getMaxPotencialFid(lhResult)
-  const maxDefaultFid = getMaxPotencialFid(defaultResult)
-  const numericValue = maxFid > maxDefaultFid ? maxFid - maxDefaultFid : 0
+  const numericValue = maxFid > defaultDefails.maxPotentcialFid ? maxFid - defaultDefails.maxPotentcialFid : 0
   const score = Audit.computeLogNormalScore(numericValue, 50, 250)
   return {
     id: 'exthouse-max-potenctial-fid-change',
-    title: 'Max Potencial FID change',
+    title: 'Max Potencial FID Change',
     description: `The change for the longest task duration highlights the impact on potential First Input Delay. [Learn more](https://developers.google.com/web/updates/2018/05/first-input-delay).`,
     score,
     scoreDisplayMode: 'numeric',
@@ -135,7 +161,7 @@ function getExtensionFiles(lhResult) {
   const score = Audit.computeLogNormalScore(numericValue, 1, 2)
   return {
     id: 'exthouse-extension-files',
-    title: 'Extension files',
+    title: 'Extension Files',
     description:
       'Extension files add extra CPU consumption for every URL visit. Bundle resources into one and leverage hot chaching. [Learn more](https://v8.dev/blog/code-caching-for-devs).',
     score,
