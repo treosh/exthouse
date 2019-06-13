@@ -45,18 +45,20 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
       ...lhResult.categories,
       performance: {
         ...lhResult.categories.performance,
-        title: `Performance with Extension`
-      },
-      exthouse: {
-        id: 'exthouse',
-        title: 'Extension Impact',
-        description: `These audits highlight the impact of the "${getExtName(ext)}" extension on user experience.`,
+        title: `Extension Performance`,
         score: categoryScore,
-        auditRefs: [
-          { id: maxPotencialFidChange.id, weight: 1 },
-          { id: newLongTasks.id, weight: 1 },
-          { id: extensionFiles.id, weight: 1 }
-        ]
+        auditRefs: lhResult.categories.performance.auditRefs.concat([
+          { id: maxPotencialFidChange.id, weight: 1, group: 'diagnostics' },
+          { id: newLongTasks.id, weight: 1, group: 'diagnostics' },
+          { id: extensionFiles.id, weight: 1, group: 'diagnostics' }
+        ])
+      }
+    },
+    categoryGroups: {
+      ...lhResult.categoryGroups,
+      diagnostics: {
+        title: 'Diagnostics',
+        description: `These audits highlight the impact of the "${getExtName(ext)}" extension on user experience.`
       }
     }
   }
