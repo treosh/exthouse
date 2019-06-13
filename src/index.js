@@ -5,7 +5,6 @@ const { promisify } = require('util')
 const { emptyDir } = require('fs-extra')
 const ReportGenerator = require('lighthouse/lighthouse-core/report/report-generator')
 const open = require('open')
-const { median } = require('simple-statistics')
 const unzipCrx = require('unzip-crx')
 const log = require('./utils/logger')
 const { measureChromium } = require('./utils/measure-chromium')
@@ -66,13 +65,13 @@ async function gatherLighthouseReports(extensions, opts) {
   log.info(`URL: %s`, opts.url)
   const totalRuns = opts.totalRuns || defaultTotalRuns
   for (const ext of extensions) {
-    log.info('Analyze %s (x%s times)', ext.name, totalRuns)
+    log.info('Analyze %s (%sx times)', ext.name, totalRuns)
     for (let i = 1; i <= totalRuns; i++) {
       const startTime = Date.now()
       try {
         const { lhr } = await measureChromium(opts.url, ext)
         await saveDebugResult(ext, i, lhr)
-        log.info('  %s: complete in %sms (lh: %sms)', i, Date.now() - startTime, Math.round(lhr.timing.total))
+        log.info('  %s: complete in %sms/%sms', i, Date.now() - startTime, Math.round(lhr.timing.total))
       } catch (e) {
         log.error(e)
       }
@@ -95,9 +94,10 @@ async function getMedianResult(ext) {
       return JSON.parse(lhr)
     })
   )
-  const medianValues = lhrs.map(lhr => getMedianMetric(lhr))
-  const medianIndex = medianValues.indexOf(median(medianValues))
-  return lhrs[medianIndex]
+  const completeLhrs = lhrs.filter(lhr => getMetricForMedian(lhr)) // filter errors
+  const completeMedianValues = completeLhrs.map(lhr => getMetricForMedian(lhr))
+  const medianIndex = completeMedianValues.indexOf(getDiscreateMedian(completeMedianValues))
+  return completeLhrs[medianIndex]
 }
 
 /**
@@ -107,8 +107,22 @@ async function getMedianResult(ext) {
  * @return {number}
  */
 
-function getMedianMetric(lhr) {
+function getMetricForMedian(lhr) {
   return Math.round(lhr.audits['max-potential-fid'].numericValue || 0)
+}
+
+/**
+ * Basic algorithm to get discreat median from `values`.
+ *
+ * @param {number[]} values
+ * @return {number}
+ */
+
+function getDiscreateMedian(values) {
+  if (values.length === 1) return values[0]
+  const sortedValues = values.concat([]).sort((a, b) => a - b)
+  const half = Math.floor(values.length / 2)
+  return sortedValues[half]
 }
 
 /**
