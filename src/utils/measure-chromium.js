@@ -1,13 +1,17 @@
-const chromeLauncher = require('chrome-launcher')
+const puppeteer = require('puppeteer')
 const lighthouse = require('lighthouse')
 const delay = require('delay')
-const { defaultName, defaultCacheType, cacheType } = require('../config')
+const { defaultCacheType, cacheType } = require('../config')
+const { isDefaultExt } = require('./extension')
 
 const lhrConfig = {
   extends: 'lighthouse:default',
   settings: {
     throttlingMethod: 'devtools', // Lantern does not support warm/hot caching
     emulatedFormFactor: 'desktop', // It's not possible to install extension on mobile
+    throttling: {
+      cpuSlowdownMultiplier: 2 // reduce slowdown to emulate desktop
+    },
     output: 'json',
     onlyAudits: [
       'screenshot-thumbnails',
@@ -23,7 +27,7 @@ const lhrConfig = {
 }
 
 /**
- * @typedef {import('../index').Extension} Extension
+ * @typedef {import('./extension').Extension} Extension
  * @typedef {import('../index').LhResult} LhResult
  *
  * @param {string} url
@@ -33,15 +37,15 @@ const lhrConfig = {
  */
 
 exports.measureChromium = async function(url, ext, cache = defaultCacheType) {
-  const isDefault = ext.name === defaultName
-  const chrome = await chromeLauncher.launch({
-    chromeFlags: isDefault ? [] : [`--disable-extensions-except=${ext.path}`, `--load-extension=${ext.path}`]
+  const browser = await puppeteer.launch({
+    headless: isDefaultExt(ext), // headless mode is not possible for extensions
+    args: isDefaultExt(ext) ? [] : [`--disable-extensions-except=${ext.path}`, `--load-extension=${ext.path}`]
   })
   const lhOpts = {
-    port: chrome.port,
+    port: new URL(browser.wsEndpoint()).port,
     disableStorageReset: cache !== defaultCacheType
   }
-  if (!isDefault) await delay(10000) // await extension to be installed
+  if (!isDefaultExt(ext)) await delay(10000) // await extension to be installed
 
   if (cache === cacheType.warm) {
     await lighthouse(url, lhOpts, lhrConfig)
@@ -50,9 +54,8 @@ exports.measureChromium = async function(url, ext, cache = defaultCacheType) {
     await lighthouse(url, lhOpts, lhrConfig)
   }
 
-  // Run Lighthouse.
   const { lhr } = await lighthouse(url, lhOpts, lhrConfig)
-  await chrome.kill()
+  await browser.close()
 
   return { lhr }
 }

@@ -1,29 +1,25 @@
-const { join, basename, isAbsolute } = require('path')
+const { omit } = require('lodash')
+const { join } = require('path')
 const fs = require('fs')
 const { promisify } = require('util')
 const { emptyDir } = require('fs-extra')
 const ReportGenerator = require('lighthouse/lighthouse-core/report/report-generator')
 const open = require('open')
-const { median } = require('simple-statistics')
-const unzipCrx = require('unzip-crx')
 const log = require('./utils/logger')
+const { getExtensions } = require('./utils/extension')
 const { measureChromium } = require('./utils/measure-chromium')
-const { tmpDir, defaultTotalRuns, defaultName, formats } = require('./config')
+const { tmpDir, defaultTotalRuns, formats } = require('./config')
 const writeFile = promisify(fs.writeFile)
 const readFile = promisify(fs.readFile)
 const readdir = promisify(fs.readdir)
 
 /**
+ * @typedef {import('./utils/extension').Extension} Extension
  * @typedef {Object} Options
  * @property {string} url
  * @property {number} [totalRuns]
  * @property {string} [format]
  * @property {boolean} [disableGather]
- *
- * @typedef {Object} Extension
- * @property {string} name
- * @property {string} [source]
- * @property {string} [path]
  *
  * @typedef {Object} LhResult
  * @property {Object} audits
@@ -65,13 +61,13 @@ async function gatherLighthouseReports(extensions, opts) {
   log.info(`URL: %s`, opts.url)
   const totalRuns = opts.totalRuns || defaultTotalRuns
   for (const ext of extensions) {
-    log.info('Analyze %s (x%s times)', ext.name, totalRuns)
+    log.info('Analyze %s (%sx times)', ext.name, totalRuns)
     for (let i = 1; i <= totalRuns; i++) {
       const startTime = Date.now()
       try {
         const { lhr } = await measureChromium(opts.url, ext)
         await saveDebugResult(ext, i, lhr)
-        log.info('  %s: complete in %sms (lh: %sms)', i, Date.now() - startTime, Math.round(lhr.timing.total))
+        log.info('  %s: complete in %sms/%sms', i, Date.now() - startTime, Math.round(lhr.timing.total))
       } catch (e) {
         log.error(e)
       }
@@ -94,9 +90,10 @@ async function getMedianResult(ext) {
       return JSON.parse(lhr)
     })
   )
-  const medianValues = lhrs.map(lhr => getMedianMetric(lhr))
-  const medianIndex = medianValues.indexOf(median(medianValues))
-  return lhrs[medianIndex]
+  const completeLhrs = lhrs.filter(lhr => getMetricForMedian(lhr)) // filter errors
+  const completeMedianValues = completeLhrs.map(lhr => getMetricForMedian(lhr))
+  const medianIndex = completeMedianValues.indexOf(getDiscreateMedian(completeMedianValues))
+  return completeLhrs[medianIndex]
 }
 
 /**
@@ -106,46 +103,22 @@ async function getMedianResult(ext) {
  * @return {number}
  */
 
-function getMedianMetric(lhr) {
+function getMetricForMedian(lhr) {
   return Math.round(lhr.audits['max-potential-fid'].numericValue || 0)
 }
 
 /**
- * @param {string[]} extSource
- * @return {Promise<Extension[]>}
- */
-
-async function getExtensions(extSource) {
-  const files = extSource.filter(file => file.endsWith('.crx'))
-  if (!files.length) throw new Error('no extensions found')
-  const extList = files.map(file => {
-    return {
-      source: isAbsolute(file) ? file : (process.cwd(), file),
-      path: join(tmpDir, basename(file)),
-      name: basename(file).replace('.crx', '')
-    }
-  })
-  await unzipExtensions(extList)
-  return [getDefaultExt()].concat(extList)
-}
-
-/**
- * @param {Extension[]} extList
- * @return {Promise}
- */
-
-function unzipExtensions(extList) {
-  return Promise.all(extList.map(ext => unzipCrx(ext.source, ext.path)))
-}
-
-/**
- * Get default extension.
+ * Basic algorithm to get discreat median from `values`.
  *
- * @return {Extension}
+ * @param {number[]} values
+ * @return {number}
  */
 
-function getDefaultExt() {
-  return { name: defaultName }
+function getDiscreateMedian(values) {
+  if (values.length === 1) return values[0]
+  const sortedValues = values.concat([]).sort((a, b) => a - b)
+  const half = Math.floor(values.length / 2)
+  return sortedValues[half]
 }
 
 /**
@@ -158,7 +131,8 @@ function getDefaultExt() {
 
 function saveDebugResult(ext, i, lhr) {
   const reportPath = join(tmpDir, `${ext.name}-result-${i}-${new Date().toJSON()}.json`)
-  return writeFile(reportPath, JSON.stringify(lhr, null, '  '))
+  const compactLhr = { ...omit(lhr, ['i18n']), timing: { total: lhr.timing.total } }
+  return writeFile(reportPath, JSON.stringify(compactLhr, null, '  '))
 }
 
 /**
