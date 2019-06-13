@@ -35,8 +35,8 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
   const defaultAudit = getDefaultMetrics(defaultResult)
   const newLongTasks = getNewLongTasks(lhResult, defaultAudit.details)
   const maxPotencialFidChange = getMaxPotencialFidChange(lhResult, defaultAudit.details)
-  const extensionFiles = getExtensionFiles(lhResult)
-  const categoryScore = average(compact([newLongTasks.score, maxPotencialFidChange.score, extensionFiles.score]))
+  const extensionExtraFiles = getExtensionExtraFiles(lhResult)
+  const categoryScore = average(compact([newLongTasks.score, maxPotencialFidChange.score, extensionExtraFiles.score]))
   return {
     ...lhResult,
     runWarnings: lhResult.runWarnings.filter(warning => !warning.includes('Chrome extensions')),
@@ -44,7 +44,7 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
       ...lhResult.audits,
       [newLongTasks.id]: newLongTasks,
       [maxPotencialFidChange.id]: maxPotencialFidChange,
-      [extensionFiles.id]: extensionFiles,
+      [extensionExtraFiles.id]: extensionExtraFiles,
       [defaultAudit.id]: defaultAudit
     },
     categories: {
@@ -52,11 +52,12 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
       performance: {
         ...lhResult.categories.performance,
         title: `Extension Performance`,
+        description: `These audits show the impact of "${getExtName(ext)}" extension on user experience.`,
         score: categoryScore,
         auditRefs: lhResult.categories.performance.auditRefs.concat([
           { id: maxPotencialFidChange.id, weight: 1, group: 'diagnostics' },
           { id: newLongTasks.id, weight: 1, group: 'diagnostics' },
-          { id: extensionFiles.id, weight: 1, group: 'diagnostics' },
+          { id: extensionExtraFiles.id, weight: 1, group: 'diagnostics' },
           { id: defaultAudit.id, weight: 0 }
         ])
       }
@@ -65,7 +66,7 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
       ...lhResult.categoryGroups,
       diagnostics: {
         title: 'Diagnostics',
-        description: `These audits highlight the impact of the "${getExtName(ext)}" extension on user experience.`
+        description: `Use this data to discover the negative impact of the extension.`
       }
     }
   }
@@ -102,13 +103,19 @@ function getDefaultMetrics(defaultResult) {
 
 function getNewLongTasks(lhResult, defaultDefails) {
   const longTasks = getLongTasks(lhResult)
-  const numericValue =
-    sum(longTasks.map(task => task.duration)) - sum(defaultDefails.longTasks.map(task => task.duration))
+  const files = getExtensionFiles(lhResult)
+  const numericValue = files.length
+    ? sum(longTasks.map(task => task.duration)) - sum(defaultDefails.longTasks.map(task => task.duration))
+    : 0
   const score = Audit.computeLogNormalScore(numericValue, 50, 250)
   const headings = [
-    { key: 'startTime', itemType: 'text', text: 'Task start time' },
+    { key: 'startTime', itemType: 'text', text: 'Start Time' },
     { key: 'duration', itemType: 'text', text: 'Duration' }
   ]
+  const items = longTasks.map(task => ({
+    startTime: `${formatMsValue(task.startTime)} ms`,
+    duration: `${formatMsValue(task.duration)} ms`
+  }))
   return {
     id: 'exthouse-new-long-tasks',
     title: 'New Long Tasks',
@@ -117,7 +124,7 @@ function getNewLongTasks(lhResult, defaultDefails) {
     scoreDisplayMode: 'numeric',
     numericValue,
     displayValue: `${formatMsValue(numericValue)} ms`,
-    details: Audit.makeTableDetails(headings, longTasks) // FIXME: display only new tasks
+    details: Audit.makeTableDetails(headings, items) // FIXME: display only new tasks
   }
 }
 
@@ -151,12 +158,9 @@ function getMaxPotencialFidChange(lhResult, defaultDefails) {
  * @return {LhAuditResult}
  */
 
-function getExtensionFiles(lhResult) {
-  const bootupTime = lhResult.audits['bootup-time']
-  const headings = bootupTime.details.headings
-  const items = bootupTime.details.items.filter(
-    /** @param {Object} item */ item => item.url.startsWith('chrome-extension')
-  )
+function getExtensionExtraFiles(lhResult) {
+  const headings = lhResult.audits['bootup-time'].details.headings
+  const items = getExtensionFiles(lhResult)
   const numericValue = items.length
   const score = Audit.computeLogNormalScore(numericValue, 1, 2)
   return {
@@ -190,6 +194,17 @@ function getLongTasks(lhResult) {
 
 function getMaxPotencialFid(lhResult) {
   return round((lhResult.audits['max-potential-fid'] || {}).numericValue || 0)
+}
+
+/**
+ * @param {LhResult} lhResult
+ * @return {{ url: string, total: number, scripting: number, scriptParseCompile: number }[]}
+ */
+
+function getExtensionFiles(lhResult) {
+  return lhResult.audits['bootup-time'].details.items.filter(
+    /** @param {Object} item */ item => item.url.startsWith('chrome-extension')
+  )
 }
 
 /**
