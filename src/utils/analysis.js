@@ -39,6 +39,7 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
   const categoryScore = average(compact([newLongTasks.score, maxPotencialFidChange.score, extensionExtraFiles.score]))
   return {
     ...lhResult,
+    extensionFullName: ext.name,
     runWarnings: lhResult.runWarnings.filter(warning => !warning.includes('Chrome extensions')),
     audits: {
       ...lhResult.audits,

@@ -27,6 +27,7 @@ const readdir = promisify(fs.readdir)
  * @property {Object} categories
  * @property {Object} categoryGroups
  * @property {string[]} runWarnings
+ * @property {string} extensionFullName
  * @property {{ total: number }} timing
  */
 
