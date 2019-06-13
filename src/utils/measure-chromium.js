@@ -1,4 +1,4 @@
-const chromeLauncher = require('chrome-launcher')
+const puppeteer = require('puppeteer')
 const lighthouse = require('lighthouse')
 const delay = require('delay')
 const { defaultName, defaultCacheType, cacheType } = require('../config')
@@ -34,11 +34,12 @@ const lhrConfig = {
 
 exports.measureChromium = async function(url, ext, cache = defaultCacheType) {
   const isDefault = ext.name === defaultName
-  const chrome = await chromeLauncher.launch({
-    chromeFlags: isDefault ? [] : [`--disable-extensions-except=${ext.path}`, `--load-extension=${ext.path}`]
+  const browser = await puppeteer.launch({
+    headless: isDefault, // headless mode is not possible for extensions
+    args: isDefault ? [] : [`--disable-extensions-except=${ext.path}`, `--load-extension=${ext.path}`]
   })
   const lhOpts = {
-    port: chrome.port,
+    port: new URL(browser.wsEndpoint()).port,
     disableStorageReset: cache !== defaultCacheType
   }
   if (!isDefault) await delay(10000) // await extension to be installed
@@ -50,9 +51,8 @@ exports.measureChromium = async function(url, ext, cache = defaultCacheType) {
     await lighthouse(url, lhOpts, lhrConfig)
   }
 
-  // Run Lighthouse.
   const { lhr } = await lighthouse(url, lhOpts, lhrConfig)
-  await chrome.kill()
+  await browser.close()
 
   return { lhr }
 }
