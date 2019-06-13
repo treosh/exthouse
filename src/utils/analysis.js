@@ -29,16 +29,16 @@ const simpleFormatNumber = require('simple-format-number')
 exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
   const newLongTasks = getNewLongTasks(lhResult, defaultResult)
   const maxPotencialFidChange = getMaxPotencialFidChange(lhResult, defaultResult)
-  const scriptingFiles = getScriptingFiles(lhResult)
-  const categoryScore = average(compact([newLongTasks.score, maxPotencialFidChange.score]))
+  const extensionFiles = getExtensionFiles(lhResult)
+  const categoryScore = average(compact([newLongTasks.score, maxPotencialFidChange.score, extensionFiles.score]))
   return {
     ...lhResult,
-    runWarnings: lhResult.runWarnings.filter(warning => !warning.includes('Chrome extensions')), // FIXME: should warning be excluded?
+    runWarnings: lhResult.runWarnings.filter(warning => !warning.includes('Chrome extensions')),
     audits: {
       ...lhResult.audits,
       [newLongTasks.id]: newLongTasks,
       [maxPotencialFidChange.id]: maxPotencialFidChange,
-      [scriptingFiles.id]: scriptingFiles
+      [extensionFiles.id]: extensionFiles
     },
     categories: {
       ...lhResult.categories,
@@ -50,7 +50,7 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
         auditRefs: [
           { id: newLongTasks.id, weight: 1 },
           { id: maxPotencialFidChange.id, weight: 1 },
-          { id: scriptingFiles.id, weight: 0 }
+          { id: extensionFiles.id, weight: 1 }
         ]
       }
     }
@@ -68,7 +68,7 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
 function getNewLongTasks(lhResult, defaultResult) {
   const longTasks = getLongTasks(lhResult)
   const defaultLongTasks = getLongTasks(defaultResult)
-  const numericValue = sum(longTasks.map(task => task.duration)) - sum(defaultLongTasks.map(task => task.duration)) // FIXME: possibly just count tasks
+  const numericValue = sum(longTasks.map(task => task.duration)) - sum(defaultLongTasks.map(task => task.duration))
   const opts = { scorePODR: 50, scoreMedian: 250 }
   const score = Audit.computeLogNormalScore(numericValue, opts.scorePODR, opts.scoreMedian)
   const headings = [
@@ -78,8 +78,7 @@ function getNewLongTasks(lhResult, defaultResult) {
   return {
     id: 'exthouse-new-long-tasks',
     title: 'New Long Tasks',
-    description:
-      'Long Tasks are CPU events that block the execution for longer than 50ms. Additional tasks produced by the extension negatively impact the user experience.',
+    description: `Long Tasks are CPU events that block the execution for longer than 50ms. Additional extension's tasks impact negatively to the user experience.`,
     score,
     scoreDisplayMode: 'numeric',
     numericValue,
@@ -100,12 +99,11 @@ function getMaxPotencialFidChange(lhResult, defaultResult) {
   const maxFid = getMaxPotencialFid(lhResult)
   const maxDefaultFid = getMaxPotencialFid(defaultResult)
   const numericValue = maxFid > maxDefaultFid ? maxFid - maxDefaultFid : 0
-  const opts = { scorePODR: 50, scoreMedian: 250 }
-  const score = Audit.computeLogNormalScore(numericValue, opts.scorePODR, opts.scoreMedian)
+  const score = Audit.computeLogNormalScore(numericValue, 50, 250)
   return {
     id: 'exthouse-max-potenctial-fid-change',
     title: 'Max Potencial FID change',
-    description: '', // FIXME: proper descriptinon
+    description: `The change for longest task duration highlights the impact on potential First Input Delay. [Learn more](https://googlechrome.github.io/lighthouse/viewer/#exthouse)`,
     score,
     scoreDisplayMode: 'numeric',
     numericValue,
@@ -120,21 +118,23 @@ function getMaxPotencialFidChange(lhResult, defaultResult) {
  * @return {LhAuditResult}
  */
 
-function getScriptingFiles(lhResult) {
+function getExtensionFiles(lhResult) {
   const bootupTime = lhResult.audits['bootup-time']
   const headings = bootupTime.details.headings
   const items = bootupTime.details.items.filter(
     /** @param {Object} item */ item => item.url.startsWith('chrome-extension')
   )
-  // FIXME: return notApplicable when no items
+  const numericValue = items.length
+  const score = Audit.computeLogNormalScore(numericValue, 1, 2)
   return {
-    id: 'exthouse-scripting',
-    title: 'New scripting files',
-    description: '', // FIXME
-    score: null,
-    scoreDisplayMode: 'informative',
-    numericValue: 1,
-    displayValue: `${items.length} file${items.length !== 1 ? 's' : ''}`,
+    id: 'exthouse-extension-files',
+    title: 'Extension files',
+    description:
+      'Extension files add extra CPU consumption for every URL visit. Bundle resources into one and leverage hot chaching. [Learn more](https://v8.dev/blog/code-caching-for-devs',
+    score,
+    scoreDisplayMode: 'numeric',
+    numericValue,
+    displayValue: `${numericValue} file${numericValue !== 1 ? 's' : ''}`,
     details: Audit.makeTableDetails(headings, items)
   }
 }
