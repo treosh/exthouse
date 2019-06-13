@@ -6,8 +6,9 @@ const { emptyDir } = require('fs-extra')
 const ReportGenerator = require('lighthouse/lighthouse-core/report/report-generator')
 const open = require('open')
 const log = require('./utils/logger')
-const { getExtensions } = require('./utils/extension')
+const { getExtensions, isDefaultExt, getDefaultExt } = require('./utils/extension')
 const { measureChromium } = require('./utils/measure-chromium')
+const { extendResultWithExthouseCategory } = require('./utils/analysis')
 const { tmpDir, defaultTotalRuns, formats } = require('./config')
 const writeFile = promisify(fs.writeFile)
 const readFile = promisify(fs.readFile)
@@ -23,6 +24,8 @@ const readdir = promisify(fs.readdir)
  *
  * @typedef {Object} LhResult
  * @property {Object} audits
+ * @property {Object} categories
+ * @property {string[]} runWarnings
  * @property {{ total: number }} timing
  */
 
@@ -38,9 +41,11 @@ exports.launch = async function(extSource, opts) {
   if (!opts.disableGather) await emptyDir(tmpDir)
   const extensions = await getExtensions(extSource)
   if (!opts.disableGather) await gatherLighthouseReports(extensions, opts)
+  const defaultResult = await getMedianResult(getDefaultExt())
   return Promise.all(
     extensions.map(async ext => {
-      const lhResult = await getMedianResult(ext)
+      let lhResult = await getMedianResult(ext)
+      if (!isDefaultExt(ext)) lhResult = extendResultWithExthouseCategory(ext, lhResult, defaultResult)
       await saveExthouseResult(ext, opts.format, lhResult)
       return lhResult
     })
@@ -144,7 +149,7 @@ function saveDebugResult(ext, i, lhr) {
  */
 
 async function saveExthouseResult(ext, format, lhr) {
-  const report = format === formats.html ? ReportGenerator.generateReport(lhr, format) : lhr
+  const report = ReportGenerator.generateReport(lhr, format)
   const path = join(process.cwd(), `exthouse-${ext.name}-results-${new Date().toJSON()}.${format}`)
   await writeFile(path, report)
   if (format === formats.html) await open(path)

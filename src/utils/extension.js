@@ -25,7 +25,7 @@ exports.getExtensions = async extSource => {
     }
   })
   await unzipExtensions(extList)
-  return [getDefaultExt()].concat(extList)
+  return [exports.getDefaultExt()].concat(extList)
 }
 
 /**
@@ -40,20 +40,20 @@ exports.isDefaultExt = ext => {
 }
 
 /**
+ * Get default extension.
+ *
+ * @return {Extension}
+ */
+
+exports.getDefaultExt = () => {
+  return { name: defaultName }
+}
+
+/**
  * @param {Extension[]} extList
  * @return {Promise}
  */
 
 function unzipExtensions(extList) {
   return Promise.all(extList.map(ext => unzipCrx(ext.source, ext.path)))
-}
-
-/**
- * Get default extension.
- *
- * @return {Extension}
- */
-
-function getDefaultExt() {
-  return { name: defaultName }
 }
