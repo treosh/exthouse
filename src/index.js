@@ -152,5 +152,5 @@ async function saveExthouseResult(ext, format, lhr) {
   const report = ReportGenerator.generateReport(lhr, format)
   const path = join(process.cwd(), `exthouse-${ext.name}-results-${new Date().toJSON()}.${format}`)
   await writeFile(path, report)
-  if (format === formats.html) await open(path)
+  if (format === formats.html && !isDefaultExt(ext)) await open(path)
 }
