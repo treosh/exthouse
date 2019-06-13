@@ -4,6 +4,7 @@ const fs = require('fs')
 const { promisify } = require('util')
 const { emptyDir } = require('fs-extra')
 const ReportGenerator = require('lighthouse/lighthouse-core/report/report-generator')
+const { getFilenamePrefix } = require('lighthouse/lighthouse-core/lib/file-namer')
 const open = require('open')
 const log = require('./utils/logger')
 const { getExtensions, isDefaultExt, getDefaultExt } = require('./utils/extension')
@@ -13,6 +14,7 @@ const { tmpDir, defaultTotalRuns, formats } = require('./config')
 const writeFile = promisify(fs.writeFile)
 const readFile = promisify(fs.readFile)
 const readdir = promisify(fs.readdir)
+const symlink = promisify(fs.symlink)
 
 /**
  * @typedef {import('./utils/extension').Extension} Extension
@@ -42,7 +44,10 @@ const readdir = promisify(fs.readdir)
 exports.launch = async function(extSource, opts) {
   if (!opts.disableGather) await emptyDir(tmpDir)
   const extensions = await getExtensions(extSource)
-  if (!opts.disableGather) await gatherLighthouseReports(extensions, opts)
+  if (!opts.disableGather) {
+    await gatherLighthouseReports(extensions, opts)
+    await setMedianResult()
+  }
   const defaultResult = await getMedianResult(getDefaultExt())
   return Promise.all(
     extensions.map(async ext => {
@@ -83,13 +88,11 @@ async function gatherLighthouseReports(extensions, opts) {
 }
 
 /**
- * @param {Extension} ext
- * @return {Promise<LhResult>}
+ * @return {Promise}
  */
-
-async function getMedianResult(ext) {
+async function setMedianResult() {
   const allFiles = await readdir(tmpDir)
-  const extFiles = allFiles.filter(fileName => fileName.startsWith(ext.name) && fileName.includes('result'))
+  const extFiles = allFiles.filter(fileName => fileName.startsWith('result') && !fileName.startsWith('median'))
   /** @type {LhResult[]} */
   const lhrs = await Promise.all(
     extFiles.map(async extFile => {
@@ -100,7 +103,39 @@ async function getMedianResult(ext) {
   const completeLhrs = lhrs.filter(lhr => getMetricForMedian(lhr)) // filter errors
   const completeMedianValues = completeLhrs.map(lhr => getMetricForMedian(lhr))
   const medianIndex = completeMedianValues.indexOf(getDiscreateMedian(completeMedianValues))
-  return completeLhrs[medianIndex]
+  const medianFiles = extFiles.filter(fileName => fileName.includes(`-${medianIndex}`))
+  return Promise.all(
+    medianFiles.map(async extFile => {
+      try {
+        let medianFileName = `median-${extFile}`
+        const matcher = new RegExp(`-${medianIndex}`, 'g')
+        medianFileName = medianFileName.replace(matcher, '')
+        await symlink(extFile, join(tmpDir, medianFileName))
+      } catch (error) {
+        if (error.code !== 'EEXIST') {
+          throw error
+        }
+      }
+    })
+  )
+}
+
+/**
+ * @param {Extension} ext
+ * @return {Promise<LhResult>}
+ */
+
+async function getMedianResult(ext) {
+  const allFiles = await readdir(tmpDir)
+  const extFiles = allFiles.filter(fileName => fileName.startsWith(`median-result-${ext.nameAlias}`))
+  /** @type {LhResult[]} */
+  const lhrs = await Promise.all(
+    extFiles.map(async extFile => {
+      const lhr = await readFile(join(tmpDir, extFile), 'utf8')
+      return JSON.parse(lhr)
+    })
+  )
+  return lhrs[0]
 }
 
 /**
@@ -137,7 +172,7 @@ function getDiscreateMedian(values) {
  */
 
 function saveDebugResult(ext, i, lhr) {
-  const reportPath = join(tmpDir, `${ext.name}-result-${i}-${new Date().toJSON()}.json`)
+  const reportPath = join(tmpDir, `result-${ext.nameAlias}-${i}.json`)
   const compactLhr = { ...omit(lhr, ['i18n']), timing: { total: lhr.timing.total } }
   return writeFile(reportPath, JSON.stringify(compactLhr, null, '  '))
 }
@@ -152,7 +187,7 @@ function saveDebugResult(ext, i, lhr) {
 
 async function saveExthouseResult(ext, format, lhr) {
   const report = ReportGenerator.generateReport(lhr, format)
-  const path = join(process.cwd(), `exthouse-${ext.name}-results-${new Date().toJSON()}.${format}`)
+  const path = join(process.cwd(), `exthouse-${ext.nameAlias}-${getFilenamePrefix(lhr)}.${format}`)
   await writeFile(path, report)
   if (format === formats.html && !isDefaultExt(ext)) await open(path)
 }

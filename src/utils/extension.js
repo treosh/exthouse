@@ -6,6 +6,7 @@ const { defaultName, tmpDir } = require('../config')
 /**
  * @typedef {Object} Extension
  * @property {string} name
+ * @property {string} nameAlias
  * @property {string} [source]
  * @property {string} [path]
  */
@@ -22,7 +23,8 @@ exports.getExtensions = async extSource => {
     return {
       source: isAbsolute(file) ? file : (process.cwd(), file),
       path: join(tmpDir, basename(file)),
-      name: basename(file).replace('.crx', '')
+      name: basename(file).replace('.crx', ''),
+      nameAlias: normalizeExtName(file)
     }
   })
   await unzipExtensions(extList)
@@ -60,8 +62,13 @@ exports.isDefaultExt = ext => {
  */
 
 exports.getDefaultExt = () => {
-  return { name: defaultName }
+  return {
+    name: defaultName,
+    nameAlias: defaultName.toLowerCase()
+  }
 }
+
+exports.normalizeExtName = () => {}
 
 /**
  * @param {Extension[]} extList
@@ -70,4 +77,16 @@ exports.getDefaultExt = () => {
 
 function unzipExtensions(extList) {
   return Promise.all(extList.map(ext => unzipCrx(ext.source, ext.path)))
+}
+
+/**
+ *
+ * @param {string} fileName
+ * @return {string}
+ */
+function normalizeExtName(fileName) {
+  let name = basename(fileName).replace('.crx', '')
+  name = name.replace(/(_|-)(.*)/, '')
+  name = name.toLowerCase()
+  return name
 }
