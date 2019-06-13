@@ -8,6 +8,9 @@ const lhrConfig = {
   settings: {
     throttlingMethod: 'devtools', // Lantern does not support warm/hot caching
     emulatedFormFactor: 'desktop', // It's not possible to install extension on mobile
+    throttling: {
+      cpuSlowdownMultiplier: 2 // reduce slowdown to emulate desktop
+    },
     output: 'json',
     onlyAudits: [
       'screenshot-thumbnails',
