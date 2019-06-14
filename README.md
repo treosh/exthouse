@@ -14,6 +14,26 @@ $ npm install --global exthouse
 $ exthouse Grammarly-for-Chrome.crx --runs=3
 ```
 
+## How it works
+
+High-level process:
+
+- runs website in 2 modes (without any extension, and with installed extension), median run is selected to avoid local issues with local environment
+- uses Lighthouse to evaluate performance
+- compare results and defines recommendations
+
+What's typically affected by web extension?
+
+- new scripts takes cpu time, which often reflects on a long CPU blockage - Long Tasks
+- Long Tasks effect TTI and FID
+
+Extra audits:
+
+- `exthouse-new-long-tasks` - The value represents a sum of [Long Tasks](https://developer.mozilla.org/en-US/docs/Web/API/Long_Tasks_API) added by extension.
+- `exthouse-max-potential-fid-change` - The change for the longest task duration highlights the impact on potential First Input Delay. [Learn more](https://developers.google.com/web/updates/2018/05/first-input-delay).
+- `exthouse-extension-files` - Extension files add extra CPU consumption for every URL visit. Bundle resources into one and leverage hot chaching. [Learn more](https://v8.dev/blog/code-caching-for-devs).
+- `exthouse-default-metrics` - All metrics collected from the default run (without extension).
+
 ## Usage
 
 ```bash
