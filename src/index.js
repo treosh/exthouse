@@ -1,4 +1,4 @@
-const { omit } = require('lodash')
+const { omit, indexOf } = require('lodash')
 const { join } = require('path')
 const fs = require('fs')
 const { promisify } = require('util')
@@ -46,8 +46,8 @@ exports.launch = async function(extSource, opts) {
   const extensions = await getExtensions(extSource)
   if (!opts.disableGather) {
     await gatherLighthouseReports(extensions, opts)
-    await setMedianResult()
   }
+  await setMedianResult(extensions)
   const defaultResult = await getMedianResult(getDefaultExt())
   return Promise.all(
     extensions.map(async ext => {
@@ -88,24 +88,28 @@ async function gatherLighthouseReports(extensions, opts) {
 }
 
 /**
+ * @param {Extension[]} extensions
  * @return {Promise}
  */
-async function setMedianResult() {
+
+async function setMedianResult(extensions) {
   const allFiles = await readdir(tmpDir)
-  const extFiles = allFiles.filter(fileName => fileName.startsWith('result') && !fileName.startsWith('median'))
-  /** @type {LhResult[]} */
-  const lhrs = await Promise.all(
-    extFiles.map(async extFile => {
-      const lhr = await readFile(join(tmpDir, extFile), 'utf8')
-      return JSON.parse(lhr)
-    })
-  )
-  const completeLhrs = lhrs.filter(lhr => getMetricForMedian(lhr)) // filter errors
-  const completeMedianValues = completeLhrs.map(lhr => getMetricForMedian(lhr))
-  const medianIndex = completeMedianValues.indexOf(getDiscreateMedian(completeMedianValues))
-  const medianFiles = extFiles.filter(fileName => fileName.includes(`-${medianIndex}`))
-  return Promise.all(
-    medianFiles.map(async extFile => {
+  await Promise.all(
+    extensions.map(async ext => {
+      const extFiles = allFiles.filter(fileName => fileName.startsWith(`result-${ext.nameAlias}`))
+      /** @type {LhResult[]} */
+      const lhrs = await Promise.all(
+        extFiles.map(async extFile => {
+          let lhr = await readFile(join(tmpDir, extFile), 'utf8')
+          lhr = JSON.parse(lhr)
+          lhr.extFile = extFile
+          return lhr
+        })
+      )
+      const completeLhrs = lhrs.filter(lhr => getMetricForMedian(lhr)) // filter errors
+      const completeMedianValues = completeLhrs.map(lhr => getMetricForMedian(lhr))
+      const medianIndex = indexOf(completeMedianValues, getDiscreateMedian(completeMedianValues))
+      const { extFile } = completeLhrs[medianIndex]
       try {
         let medianFileName = `median-${extFile}`
         const matcher = new RegExp(`-${medianIndex}`, 'g')

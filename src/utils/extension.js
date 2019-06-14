@@ -1,4 +1,4 @@
-const { startCase } = require('lodash')
+const { startCase, toLower } = require('lodash')
 const unzipCrx = require('unzip-crx')
 const { join, basename, isAbsolute } = require('path')
 const { defaultName, tmpDir } = require('../config')
@@ -64,11 +64,9 @@ exports.isDefaultExt = ext => {
 exports.getDefaultExt = () => {
   return {
     name: defaultName,
-    nameAlias: defaultName.toLowerCase()
+    nameAlias: toLower(defaultName)
   }
 }
-
-exports.normalizeExtName = () => {}
 
 /**
  * @param {Extension[]} extList
@@ -87,6 +85,6 @@ function unzipExtensions(extList) {
 function normalizeExtName(fileName) {
   let name = basename(fileName).replace('.crx', '')
   name = name.replace(/(_|-)(.*)/, '')
-  name = name.toLowerCase()
+  name = toLower(name)
   return name
 }
