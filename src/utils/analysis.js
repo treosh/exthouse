@@ -120,7 +120,7 @@ function getNewLongTasks(lhResult, defaultDefails) {
   return {
     id: 'exthouse-new-long-tasks',
     title: 'New Long Tasks',
-    description: `Long Tasks are CPU events that block the execution for longer than 50ms. Additional extension's tasks impact negatively to the user experience.`,
+    description: `Total value of [Long Tasks](https://developer.mozilla.org/en-US/docs/Web/API/Long_Tasks_API) added by extension.`,
     score,
     scoreDisplayMode: 'numeric',
     numericValue,
