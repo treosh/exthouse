@@ -67,7 +67,7 @@ exports.extendResultWithExthouseCategory = (ext, lhResult, defaultResult) => {
       ...lhResult.categoryGroups,
       diagnostics: {
         title: 'Diagnostics',
-        description: `Use this data to discover the negative impact of the extension.`
+        description: `Use diagnostics to discover the negative impact of the extension.`
       }
     }
   }
@@ -119,8 +119,8 @@ function getNewLongTasks(lhResult, defaultDefails) {
   }))
   return {
     id: 'exthouse-new-long-tasks',
-    title: 'New Long Tasks',
-    description: `Total value of [Long Tasks](https://developer.mozilla.org/en-US/docs/Web/API/Long_Tasks_API) added by extension.`,
+    title: 'Added Long Tasks',
+    description: `The value represents a sum of [Long Tasks](https://developer.mozilla.org/en-US/docs/Web/API/Long_Tasks_API) added by extension. The table displays all long tasks occured.`,
     score,
     scoreDisplayMode: 'numeric',
     numericValue,
@@ -143,8 +143,12 @@ function getMaxPotentialFidChange(lhResult, defaultDefails) {
   const score = Audit.computeLogNormalScore(numericValue, 50, 250)
   return {
     id: 'exthouse-max-potential-fid-change',
-    title: 'Max Potential FID Change',
-    description: `The change for the longest task duration highlights the impact on potential First Input Delay. [Learn more](https://developers.google.com/web/updates/2018/05/first-input-delay).`,
+    title: 'Max Potential First Input Delay change',
+    description: `With an addition of extension Max FID changed from ${formatMsValue(
+      defaultDefails.maxPotentcialFid
+    )}ms to ${formatMsValue(
+      maxFid
+    )}ms. The change for the longest task duration highlights the impact on potential First Input Delay. [Learn more](https://developers.google.com/web/updates/2018/05/first-input-delay).`,
     score,
     scoreDisplayMode: 'numeric',
     numericValue,
@@ -163,10 +167,10 @@ function getExtensionExtraFiles(lhResult) {
   const headings = lhResult.audits['bootup-time'].details.headings
   const items = getExtensionFiles(lhResult)
   const numericValue = items.length
-  const score = Audit.computeLogNormalScore(numericValue, 1, 2)
+  const score = Audit.computeLogNormalScore(numericValue, 0.5, 2) // 0 is optiomal
   return {
     id: 'exthouse-extension-files',
-    title: 'Extension Files',
+    title: 'Extension files',
     description:
       'Extension files add extra CPU consumption for every URL visit. Bundle resources into one and leverage hot chaching. [Learn more](https://v8.dev/blog/code-caching-for-devs).',
     score,
