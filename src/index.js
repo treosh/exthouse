@@ -7,7 +7,7 @@ const ReportGenerator = require('lighthouse/lighthouse-core/report/report-genera
 const { getFilenamePrefix } = require('lighthouse/lighthouse-core/lib/file-namer')
 const open = require('open')
 const log = require('./utils/logger')
-const { getExtensions, isDefaultExt, getDefaultExt } = require('./utils/extension')
+const { getExtensions, isDefaultExt, getDefaultExt, normalizeExtName } = require('./utils/extension')
 const { measureChromium } = require('./utils/measure-chromium')
 const { extendResultWithExthouseCategory } = require('./utils/analysis')
 const { tmpDir, defaultTotalRuns, formats } = require('./config')
@@ -25,6 +25,7 @@ const symlink = promisify(fs.symlink)
  * @property {boolean} [disableGather]
  *
  * @typedef {Object} LhResult
+ * @property {string} fetchTime
  * @property {Object} audits
  * @property {Object} categories
  * @property {Object} categoryGroups
@@ -96,7 +97,7 @@ async function setMedianResult(extensions) {
   const allFiles = await readdir(tmpDir)
   await Promise.all(
     extensions.map(async ext => {
-      const extFiles = allFiles.filter(fileName => fileName.startsWith(`result-${ext.nameAlias}`))
+      const extFiles = allFiles.filter(fileName => fileName.startsWith(`result-${normalizeExtName(ext.name)}`))
       /** @type {{lhr: LhResult, extFile: string }[]} */
       const results = await Promise.all(
         extFiles.map(async extFile => {
@@ -129,16 +130,8 @@ async function setMedianResult(extensions) {
  */
 
 async function getMedianResult(ext) {
-  const allFiles = await readdir(tmpDir)
-  const extFiles = allFiles.filter(fileName => fileName.startsWith(`median-result-${ext.nameAlias}`))
-  /** @type {LhResult[]} */
-  const lhrs = await Promise.all(
-    extFiles.map(async extFile => {
-      const lhr = await readFile(join(tmpDir, extFile), 'utf8')
-      return JSON.parse(lhr)
-    })
-  )
-  return lhrs[0]
+  const lhr = await readFile(join(tmpDir, `median-result-${normalizeExtName(ext.name)}.json`), 'utf8')
+  return JSON.parse(lhr)
 }
 
 /**
@@ -175,7 +168,7 @@ function getDiscreateMedian(values) {
  */
 
 function saveDebugResult(ext, i, lhr) {
-  const reportPath = join(tmpDir, `result-${ext.nameAlias}-${i}.json`)
+  const reportPath = join(tmpDir, `result-${normalizeExtName(ext.name)}-${i}.json`)
   const compactLhr = { ...omit(lhr, ['i18n']), timing: { total: lhr.timing.total } }
   return writeFile(reportPath, JSON.stringify(compactLhr, null, '  '))
 }
@@ -190,7 +183,34 @@ function saveDebugResult(ext, i, lhr) {
 
 async function saveExthouseResult(ext, format, lhr) {
   const report = ReportGenerator.generateReport(lhr, format)
-  const path = join(process.cwd(), `exthouse-${ext.nameAlias}-${getFilenamePrefix(lhr)}.${format}`)
+  const path = join(process.cwd(), `exthouse-${normalizeExtName(ext.name)}-${getFilenameDate(lhr)}.${format}`)
   await writeFile(path, report)
   if (format === formats.html) await open(path)
+}
+
+/**
+ * Get date based on LhResult
+ *
+ * @param {LhResult} lhr
+ * @return {string}
+ */
+
+function getFilenameDate(lhr) {
+  const date = (lhr.fetchTime && new Date(lhr.fetchTime)) || new Date()
+
+  const timeStr = date.toLocaleTimeString('en-US', { hour12: false })
+  const dateParts = date
+    .toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+    .split('/')
+  // @ts-ignore - parts exists
+  dateParts.unshift(dateParts.pop())
+  const dateStr = dateParts.join('-')
+
+  const filenamePrefix = `${dateStr}_${timeStr}`
+  // replace characters that are unfriendly to filenames
+  return filenamePrefix.replace(/[/?<>\\:*|":]/g, '-')
 }
