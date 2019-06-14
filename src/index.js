@@ -97,23 +97,22 @@ async function setMedianResult(extensions) {
   await Promise.all(
     extensions.map(async ext => {
       const extFiles = allFiles.filter(fileName => fileName.startsWith(`result-${ext.nameAlias}`))
-      /** @type {LhResult[]} */
-      const lhrs = await Promise.all(
+      /** @type {{lhr: LhResult, extFile: string }[]} */
+      const results = await Promise.all(
         extFiles.map(async extFile => {
           let lhr = await readFile(join(tmpDir, extFile), 'utf8')
-          lhr = JSON.parse(lhr)
-          lhr.extFile = extFile
-          return lhr
+          return {
+            lhr: JSON.parse(lhr),
+            extFile
+          }
         })
       )
-      const completeLhrs = lhrs.filter(lhr => getMetricForMedian(lhr)) // filter errors
-      const completeMedianValues = completeLhrs.map(lhr => getMetricForMedian(lhr))
+      const completeRes = results.filter(({ lhr }) => getMetricForMedian(lhr)) // filter errors
+      const completeMedianValues = completeRes.map(({ lhr }) => getMetricForMedian(lhr))
       const medianIndex = indexOf(completeMedianValues, getDiscreateMedian(completeMedianValues))
-      const { extFile } = completeLhrs[medianIndex]
+      const { extFile } = completeRes[medianIndex]
       try {
-        let medianFileName = `median-${extFile}`
-        const matcher = new RegExp(`-${medianIndex}`, 'g')
-        medianFileName = medianFileName.replace(matcher, '')
+        const medianFileName = `median-${extFile}`.replace(/-[-0-9]/, '')
         await symlink(extFile, join(tmpDir, medianFileName))
       } catch (error) {
         if (error.code !== 'EEXIST') {
