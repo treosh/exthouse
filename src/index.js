@@ -44,18 +44,18 @@ const symlink = promisify(fs.symlink)
 exports.launch = async function(extSource, opts) {
   if (!opts.disableGather) await emptyDir(tmpDir)
   const extensions = await getExtensions(extSource)
-  if (!opts.disableGather) {
-    await gatherLighthouseReports(extensions, opts)
-  }
+  if (!opts.disableGather) await gatherLighthouseReports(extensions, opts)
   await setMedianResult(extensions)
   const defaultResult = await getMedianResult(getDefaultExt())
   return Promise.all(
-    extensions.map(async ext => {
-      let lhResult = await getMedianResult(ext)
-      if (!isDefaultExt(ext)) lhResult = extendResultWithExthouseCategory(ext, lhResult, defaultResult)
-      await saveExthouseResult(ext, opts.format, lhResult)
-      return lhResult
-    })
+    extensions
+      .filter(ext => !isDefaultExt(ext))
+      .map(async ext => {
+        const lhResult = await getMedianResult(ext)
+        const exthouseResult = extendResultWithExthouseCategory(ext, lhResult, defaultResult)
+        await saveExthouseResult(ext, opts.format, exthouseResult)
+        return exthouseResult
+      })
   )
 }
 
@@ -192,5 +192,5 @@ async function saveExthouseResult(ext, format, lhr) {
   const report = ReportGenerator.generateReport(lhr, format)
   const path = join(process.cwd(), `exthouse-${ext.nameAlias}-${getFilenamePrefix(lhr)}.${format}`)
   await writeFile(path, report)
-  if (format === formats.html && !isDefaultExt(ext)) await open(path)
+  if (format === formats.html) await open(path)
 }
