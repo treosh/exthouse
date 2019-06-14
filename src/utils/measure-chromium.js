@@ -20,8 +20,7 @@ const lhrConfig = {
       'mainthread-work-breakdown',
       'bootup-time',
       'network-requests',
-      'main-thread-tasks',
-      'resource-summary'
+      'main-thread-tasks'
     ]
   }
 }

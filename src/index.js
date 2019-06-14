@@ -1,17 +1,20 @@
-const { omit } = require('lodash')
+const { omit, indexOf } = require('lodash')
 const { join } = require('path')
 const fs = require('fs')
 const { promisify } = require('util')
 const { emptyDir } = require('fs-extra')
 const ReportGenerator = require('lighthouse/lighthouse-core/report/report-generator')
+const { getFilenamePrefix } = require('lighthouse/lighthouse-core/lib/file-namer')
 const open = require('open')
 const log = require('./utils/logger')
-const { getExtensions } = require('./utils/extension')
+const { getExtensions, isDefaultExt, getDefaultExt, normalizeExtName } = require('./utils/extension')
 const { measureChromium } = require('./utils/measure-chromium')
+const { extendResultWithExthouseCategory } = require('./utils/analysis')
 const { tmpDir, defaultTotalRuns, formats } = require('./config')
 const writeFile = promisify(fs.writeFile)
 const readFile = promisify(fs.readFile)
 const readdir = promisify(fs.readdir)
+const symlink = promisify(fs.symlink)
 
 /**
  * @typedef {import('./utils/extension').Extension} Extension
@@ -22,7 +25,12 @@ const readdir = promisify(fs.readdir)
  * @property {boolean} [disableGather]
  *
  * @typedef {Object} LhResult
+ * @property {string} fetchTime
  * @property {Object} audits
+ * @property {Object} categories
+ * @property {Object} categoryGroups
+ * @property {string[]} runWarnings
+ * @property {string} extensionFullName
  * @property {{ total: number }} timing
  */
 
@@ -38,12 +46,17 @@ exports.launch = async function(extSource, opts) {
   if (!opts.disableGather) await emptyDir(tmpDir)
   const extensions = await getExtensions(extSource)
   if (!opts.disableGather) await gatherLighthouseReports(extensions, opts)
+  await setMedianResult(extensions)
+  const defaultResult = await getMedianResult(getDefaultExt())
   return Promise.all(
-    extensions.map(async ext => {
-      const lhResult = await getMedianResult(ext)
-      await saveExthouseResult(ext, opts.format, lhResult)
-      return lhResult
-    })
+    extensions
+      .filter(ext => !isDefaultExt(ext))
+      .map(async ext => {
+        const lhResult = await getMedianResult(ext)
+        const exthouseResult = extendResultWithExthouseCategory(ext, lhResult, defaultResult)
+        await saveExthouseResult(ext, opts.format, exthouseResult)
+        return exthouseResult
+      })
   )
 }
 
@@ -76,24 +89,49 @@ async function gatherLighthouseReports(extensions, opts) {
 }
 
 /**
+ * @param {Extension[]} extensions
+ * @return {Promise}
+ */
+
+async function setMedianResult(extensions) {
+  const allFiles = await readdir(tmpDir)
+  await Promise.all(
+    extensions.map(async ext => {
+      const extFiles = allFiles.filter(fileName => fileName.startsWith(`result-${normalizeExtName(ext.name)}`))
+      /** @type {{lhr: LhResult, extFile: string }[]} */
+      const results = await Promise.all(
+        extFiles.map(async extFile => {
+          let lhr = await readFile(join(tmpDir, extFile), 'utf8')
+          return {
+            lhr: JSON.parse(lhr),
+            extFile
+          }
+        })
+      )
+      const completeRes = results.filter(({ lhr }) => getMetricForMedian(lhr)) // filter errors
+      const completeMedianValues = completeRes.map(({ lhr }) => getMetricForMedian(lhr))
+      const medianIndex = indexOf(completeMedianValues, getDiscreateMedian(completeMedianValues))
+      const { extFile } = completeRes[medianIndex]
+      try {
+        const medianFileName = `median-${extFile}`.replace(/-[-0-9]/, '')
+        await symlink(extFile, join(tmpDir, medianFileName))
+      } catch (error) {
+        if (error.code !== 'EEXIST') {
+          throw error
+        }
+      }
+    })
+  )
+}
+
+/**
  * @param {Extension} ext
  * @return {Promise<LhResult>}
  */
 
 async function getMedianResult(ext) {
-  const allFiles = await readdir(tmpDir)
-  const extFiles = allFiles.filter(fileName => fileName.startsWith(ext.name) && fileName.includes('result'))
-  /** @type {LhResult[]} */
-  const lhrs = await Promise.all(
-    extFiles.map(async extFile => {
-      const lhr = await readFile(join(tmpDir, extFile), 'utf8')
-      return JSON.parse(lhr)
-    })
-  )
-  const completeLhrs = lhrs.filter(lhr => getMetricForMedian(lhr)) // filter errors
-  const completeMedianValues = completeLhrs.map(lhr => getMetricForMedian(lhr))
-  const medianIndex = completeMedianValues.indexOf(getDiscreateMedian(completeMedianValues))
-  return completeLhrs[medianIndex]
+  const lhr = await readFile(join(tmpDir, `median-result-${normalizeExtName(ext.name)}.json`), 'utf8')
+  return JSON.parse(lhr)
 }
 
 /**
@@ -130,7 +168,7 @@ function getDiscreateMedian(values) {
  */
 
 function saveDebugResult(ext, i, lhr) {
-  const reportPath = join(tmpDir, `${ext.name}-result-${i}-${new Date().toJSON()}.json`)
+  const reportPath = join(tmpDir, `result-${normalizeExtName(ext.name)}-${i}.json`)
   const compactLhr = { ...omit(lhr, ['i18n']), timing: { total: lhr.timing.total } }
   return writeFile(reportPath, JSON.stringify(compactLhr, null, '  '))
 }
@@ -144,8 +182,35 @@ function saveDebugResult(ext, i, lhr) {
  */
 
 async function saveExthouseResult(ext, format, lhr) {
-  const report = format === formats.html ? ReportGenerator.generateReport(lhr, format) : lhr
-  const path = join(process.cwd(), `exthouse-${ext.name}-results-${new Date().toJSON()}.${format}`)
+  const report = ReportGenerator.generateReport(lhr, format)
+  const path = join(process.cwd(), `exthouse-${normalizeExtName(ext.name)}-${getFilenameDate(lhr)}.${format}`)
   await writeFile(path, report)
   if (format === formats.html) await open(path)
+}
+
+/**
+ * Get date based on LhResult
+ *
+ * @param {LhResult} lhr
+ * @return {string}
+ */
+
+function getFilenameDate(lhr) {
+  const date = (lhr.fetchTime && new Date(lhr.fetchTime)) || new Date()
+
+  const timeStr = date.toLocaleTimeString('en-US', { hour12: false })
+  const dateParts = date
+    .toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+    .split('/')
+  // @ts-ignore - parts exists
+  dateParts.unshift(dateParts.pop())
+  const dateStr = dateParts.join('-')
+
+  const filenamePrefix = `${dateStr}_${timeStr}`
+  // replace characters that are unfriendly to filenames
+  return filenamePrefix.replace(/[/?<>\\:*|":]/g, '-')
 }

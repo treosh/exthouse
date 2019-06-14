@@ -1,3 +1,4 @@
+const { startCase, toLower } = require('lodash')
 const unzipCrx = require('unzip-crx')
 const { join, basename, isAbsolute } = require('path')
 const { defaultName, tmpDir } = require('../config')
@@ -25,11 +26,24 @@ exports.getExtensions = async extSource => {
     }
   })
   await unzipExtensions(extList)
-  return [getDefaultExt()].concat(extList)
+  return [exports.getDefaultExt()].concat(extList)
 }
 
 /**
- * Check  if `ext` is default.
+ * Get well-formatted `ext` name.
+ *
+ * @param {Extension} ext
+ * @return {string}
+ */
+
+exports.getExtName = ext => {
+  const match = ext.name.match(/_v/)
+  if (!match) return ext.name
+  return startCase(ext.name.substr(0, match.index))
+}
+
+/**
+ * Check if `ext` is default.
  *
  * @param {Extension} ext
  * @return {Boolean}
@@ -40,20 +54,36 @@ exports.isDefaultExt = ext => {
 }
 
 /**
+ * Get default extension.
+ *
+ * @return {Extension}
+ */
+
+exports.getDefaultExt = () => {
+  return {
+    name: defaultName
+  }
+}
+
+/**
+ *
+ * @param {string} fileName
+ * @return {string}
+ */
+
+exports.normalizeExtName = fileName => {
+  let name = basename(fileName).replace('.crx', '')
+  name = name.replace(/_v.*/, '')
+  name = name.replace(/_/, '')
+  name = toLower(name)
+  return name
+}
+
+/**
  * @param {Extension[]} extList
  * @return {Promise}
  */
 
 function unzipExtensions(extList) {
   return Promise.all(extList.map(ext => unzipCrx(ext.source, ext.path)))
-}
-
-/**
- * Get default extension.
- *
- * @return {Extension}
- */
-
-function getDefaultExt() {
-  return { name: defaultName }
 }
