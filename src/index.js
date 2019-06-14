@@ -96,7 +96,8 @@ async function setMedianResult(extensions) {
   const allFiles = await readdir(tmpDir)
   await Promise.all(
     extensions.map(async ext => {
-      const extFiles = allFiles.filter(fileName => fileName.startsWith(`result-${normalizeExtName(ext.name)}`))
+      const matcher = new RegExp(`result-${normalizeExtName(ext.name)}-[-0-9]`, 'g')
+      const extFiles = allFiles.filter(fileName => fileName.match(matcher))
       /** @type {{lhr: LhResult, extFile: string }[]} */
       const results = await Promise.all(
         extFiles.map(async extFile => {
