@@ -14,6 +14,23 @@ $ npm install --global exthouse
 $ exthouse Grammarly-for-Chrome.crx --runs=3
 ```
 
+## Table of Contents
+
+1.  [Motivation](#goals)
+1.  [Methodology](#methodology)
+    1.  [Environment conditions](#environment-conditions)
+    1.  [Measured metrics](#measured-metrics)
+    1.  [Scoring algorithm](#scoring-algorithm)
+1.  [NPM Module](#npm-module)
+1.  [Updates](#updates)
+1.  [Data](#data)
+    1.  [Summary](#summary)
+    1.  [Top 20 extensions from Chrome Web Store](#top-20-extensions-from-chrome-web-store)
+1.  [Evaluate any extension](#evaluate-any-extension)
+1.  [Future Work](#future-work)
+1.  [FAQs](#faqs)
+1.  [Contributing](#contributing)
+
 ## Motivation
 
 Often, measuring real user performance engineers take to the account factors, like: device,  network conditions. 
@@ -21,25 +38,22 @@ But here are more factors in real user monitoring. One of them - web extensions.
 
 Exthouse - tool, powered by [Lighthouse](https://github.com/GoogleChrome/lighthouse), provides with report (Lighthouse style 😎) about impact on user performance by calculating all additional work extension added to the browser.
 
-## How it works
+## Methodology
 
-### High-level process:
+Exthouse runs website in 2 modes (without any extension, and with installed extension), median run is selected to avoid local issues with local environment. 
+Using Lighthouse to evaluate performance, compares results and defines recommendations
 
-- runs website in 2 modes (without any extension, and with installed extension), median run is selected to avoid local issues with local environment
-- uses Lighthouse to evaluate performance
-- compares results and defines recommendations
-
-### What are the environment conditions?
+### Environment conditions
 
 - Extensions installed and sites are opened using [Puppeteer](https://github.com/GoogleChrome/puppeteer) and Chromium browser.
 - Lighthouse run with: `throttlingMethod: devtools`, `emulatedFormFactor: 'desktop'`. `cpuSlowdownMultiplier: 2`. More settings in [config](/src/utils/measure-chromium.js#L7). 
 
-### What performance metrics does Exthouse measure?
+### Measured metrics
 
 - Time to interactive (TTI) - Time to interactive is the amount of time it takes for the page to become fully interactive. [Learn more](https://developers.google.com/web/tools/lighthouse/audits/time-to-interactive).
 - First input delay (FID) - The change for the longest task duration highlights the impact on potential First Input Delay. [Learn more](https://developers.google.com/web/updates/2018/05/first-input-delay).
 
-### How are the scores weighted?
+### Scoring algorithm
 
 It's based on [Lighthouse scoring algorithm](https://github.com/GoogleChrome/lighthouse/blob/master/docs/scoring.md#how-are-the-scores-weighted).
 
@@ -50,7 +64,7 @@ Exthouse adds extra audits to calculate performance score:
 - `exthouse-extension-files` - Extension files add extra CPU consumption for every URL visit. Bundle resources into one and leverage hot chaching. [Learn more](https://v8.dev/blog/code-caching-for-devs) (weight: 1).
 - `exthouse-default-metrics` - All metrics collected from the default run (without extension) (weight: 0).
 
-## Usage
+## NPM Module
 
 ```bash
 exthouse [path/to/extension.crx] [options]
@@ -68,12 +82,16 @@ Options:
   -h, --help         output usage information
 ```
 
-## Evaluate top 15 from Chrome Web Store
+## Data 
 
-Exthouse includes top 15 extensions from Chrome Web Store located in exthouse/extensions/chrome-top-15.
+### Summary
 
-> Extensions were fetched using ranking form https://crx.dam.io/ 
-> They filtered by extensions not requiring login or some additional input from user to lunch.  
+Extensions fetched from [Chrome Extensions Archive](https://crx.dam.io/) which includes 176,323 extensions and 396,057 versions ranked by number of users downloaded them.
+
+### Top 20 extensions from Chrome Web Store
+
+Extensions were filtered to exclude extensions require login and not relevant extensions in categories like PLATFORM_APP.
+They are placed in `./exensions/chrome-top-20` folder.
 
 ## Evaluate any extension
 
@@ -81,6 +99,15 @@ Exthouse includes top 15 extensions from Chrome Web Store located in exthouse/ex
 2. Copy path to the `MY_EXTENTION.crx` and pass to cli `exthouse MY_EXTENTION.crx --runs=3`
 3. The process takes a few minutes and result are stored in the [Lighthouse](https://github.com/GoogleChrome/lighthouse) report.
 4. All debug data is stored in `exthouse` folder.
+
+## Future Work
+
+- experiment with cache (try: cold, warm, hot) to see how scripts are effected by caching in affecting CPU. [More about cache](https://v8.dev/blog/code-caching-for-devs).
+- experiment with results, running in Chrome and Edge. Add flag `browserBinaryPath`.
+- expose node.js API.
+- `exthouse-new-long-tasks`: reformat table, 2 rows with old tasks and new tasks.
+- make repo smaller. Try [bfg-repo-cleaner](https://github.com/rtyley/bfg-repo-cleaner).
+- proceed with Firefox add-ons experiments (all related work is in branch `firefox-experimental`).
 
 ## Credits
 
