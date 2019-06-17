@@ -68,6 +68,13 @@ Options:
   -h, --help         output usage information
 ```
 
+## Evaluate top 15 from Chrome Web Store
+
+Exthouse includes top 15 extensions from Chrome Web Store located in exthouse/extensions/chrome-top-15.
+
+> Extensions were fetched using ranking form https://crx.dam.io/ 
+> They filtered by extensions not requiring login or some additional input from user to lunch.  
+
 ## Evaluate any extension
 
 1. Download extension using https://chrome-extension-downloader.com/
