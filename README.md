@@ -4,6 +4,8 @@
 
 <img width="1116" alt="Screenshot of "Grammarly" extension performance report" src="https://user-images.githubusercontent.com/158189/59514028-5904e680-8ebc-11e9-9e3f-bb6c9f8b464e.png">
 
+Exthouse - tool, powered by [Lighthouse](https://github.com/GoogleChrome/lighthouse), provides with report (Lighthouse style 😎) about impact on user performance by calculating all additional work extension added to the browser.
+
 ## Install
 
 Install CLI using `npm`:
@@ -33,10 +35,10 @@ $ exthouse Grammarly-for-Chrome.crx --runs=3
 
 ## Motivation
 
-Often, measuring real user performance engineers take to the account factors, like: device,  network conditions. 
-But here are more factors in real user monitoring. One of them - web extensions. They can add additional scripts to process, DOM manipulations and other. It was beyond developers control for a while. 
-
-Exthouse - tool, powered by [Lighthouse](https://github.com/GoogleChrome/lighthouse), provides with report (Lighthouse style 😎) about impact on user performance by calculating all additional work extension added to the browser.
+1. Highlight one more performance factor affecting web performance.
+2. Identify web extensions that have negative impact on web performance.
+3. Provide developers with tool to measure extension performance score, hence helps them to improve perforamnce of their extensions and web in general.
+4. Show that not only mobile users struggling with issue regrading performance, but also users on a desktop but by other factors - web extensions.
 
 ## Methodology
 
