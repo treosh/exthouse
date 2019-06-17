@@ -18,7 +18,7 @@ $ exthouse Grammarly-for-Chrome.crx --runs=3
 
 ## Table of Contents
 
-1.  [Motivation](#goals)
+1.  [Motivation](#motivation)
 1.  [Methodology](#methodology)
     1.  [Environment conditions](#environment-conditions)
     1.  [Measured metrics](#measured-metrics)
