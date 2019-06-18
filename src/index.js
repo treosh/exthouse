@@ -4,7 +4,6 @@ const fs = require('fs')
 const { promisify } = require('util')
 const { emptyDir } = require('fs-extra')
 const ReportGenerator = require('lighthouse/lighthouse-core/report/report-generator')
-const { getFilenamePrefix } = require('lighthouse/lighthouse-core/lib/file-namer')
 const open = require('open')
 const log = require('./utils/logger')
 const { getExtensions, isDefaultExt, getDefaultExt, normalizeExtName } = require('./utils/extension')
@@ -97,7 +96,8 @@ async function setMedianResult(extensions) {
   const allFiles = await readdir(tmpDir)
   await Promise.all(
     extensions.map(async ext => {
-      const extFiles = allFiles.filter(fileName => fileName.startsWith(`result-${normalizeExtName(ext.name)}`))
+      const matcher = new RegExp(`result-${normalizeExtName(ext.name)}-[-0-9]`, 'g')
+      const extFiles = allFiles.filter(fileName => fileName.match(matcher))
       /** @type {{lhr: LhResult, extFile: string }[]} */
       const results = await Promise.all(
         extFiles.map(async extFile => {
