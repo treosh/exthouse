@@ -96,6 +96,29 @@ Extensions fetched from [Chrome Extensions Archive](https://crx.dam.io/) which i
 Extensions were filtered to exclude extensions require login and not relevant extensions in categories like PLATFORM_APP.
 They are placed in `./exensions/chrome-top-20` folder.
 
+| Name                            | Score |
+| ------------------------------- | ----- |
+| honey                           | 31    |
+| grammarly-for-chrome            | 52    |
+| skype                           | 84    |
+| lastpass:-free-password-manager | 89    |
+| avira-browser-safety            | 93    |
+| avast-online-security           | 94    |
+| avast-safeprice                 | 99    |
+| adblock                         | 100   |
+| adblock-plus                    | 100   |
+| avg-web-tuneup                  | 100   |
+| cisco-webex-extension           | 100   |
+| easypdfcombine                  | 100   |
+| fromdoctopdf                    | 100   |
+| g-suite-training                | 100   |
+| google-docs-offline             | 100   |
+| google-translate                | 100   |
+| pinterest-save-button           | 100   |
+| tampermonkey                    | 100   |
+| ublock-origin                   | 100   |
+| unlimited-free-vpn-hola         | 100   |
+
 ## Evaluate any extension
 
 1. Download extension using https://chrome-extension-downloader.com/

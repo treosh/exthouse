@@ -11,5 +11,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["bin", "src", "types"]
+  "include": ["bin", "src", "script", "types"]
 }
