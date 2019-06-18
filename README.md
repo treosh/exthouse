@@ -2,7 +2,7 @@
 
 > Analyze impact of browser extension on web performance.
 
-<img width="1116" alt="Screenshot of "Grammarly" extension performance report" src="https://user-images.githubusercontent.com/158189/59514028-5904e680-8ebc-11e9-9e3f-bb6c9f8b464e.png">
+<img width="1116" alt="Screenshot of Grammarly extension performance report" src="https://user-images.githubusercontent.com/158189/59514028-5904e680-8ebc-11e9-9e3f-bb6c9f8b464e.png">
 
 Exthouse - tool, powered by [Lighthouse](https://github.com/GoogleChrome/lighthouse), provides with report (Lighthouse style 😎) about impact on user performance by calculating all additional work extension added to the browser.
 
@@ -11,9 +11,7 @@ Exthouse - tool, powered by [Lighthouse](https://github.com/GoogleChrome/lightho
 Install CLI using `npm`:
 
 ```bash
-
 $ npm install --global exthouse
-$ exthouse Grammarly-for-Chrome.crx --runs=3
 ```
 
 ## Table of Contents
@@ -31,7 +29,7 @@ $ exthouse Grammarly-for-Chrome.crx --runs=3
 1.  [Evaluate any extension](#evaluate-any-extension)
 1.  [Future Work](#future-work)
 1.  [FAQs](#faqs)
-1.  [Contributing](#contributing)
+1.  [Credits](#credits)
 
 ## Motivation
 
@@ -42,13 +40,13 @@ $ exthouse Grammarly-for-Chrome.crx --runs=3
 
 ## Methodology
 
-Exthouse runs website in 2 modes (without any extension, and with installed extension), median run is selected to avoid local issues with local environment. 
+Exthouse runs website in 2 modes (without any extension, and with installed extension), median run is selected to avoid local issues with local environment.
 Using Lighthouse to evaluate performance, compares results and defines recommendations
 
 ### Environment conditions
 
 - Extensions installed and sites are opened using [Puppeteer](https://github.com/GoogleChrome/puppeteer) and Chromium browser.
-- Lighthouse run with: `throttlingMethod: devtools`, `emulatedFormFactor: 'desktop'`. `cpuSlowdownMultiplier: 2`. More settings in [config](/src/utils/measure-chromium.js#L7). 
+- Lighthouse run with: `throttlingMethod: devtools`, `emulatedFormFactor: 'desktop'`. `cpuSlowdownMultiplier: 2`. More settings in [config](/src/utils/measure-chromium.js#L7).
 
 ### Measured metrics
 
@@ -66,10 +64,13 @@ Exthouse adds extra audits to calculate performance score:
 - `exthouse-extension-files` - Extension files add extra CPU consumption for every URL visit. Bundle resources into one and leverage hot chaching. [Learn more](https://v8.dev/blog/code-caching-for-devs) (weight: 1).
 - `exthouse-default-metrics` - All metrics collected from the default run (without extension) (weight: 0).
 
-## NPM Module
+## Usage
 
 ```bash
 exthouse [path/to/extension.crx] [options]
+
+# Example
+exthouse Grammarly-for-Chrome.crx --runs=3
 ```
 
 **`$ exthouse --help`**
@@ -84,7 +85,7 @@ Options:
   -h, --help         output usage information
 ```
 
-## Data 
+## Data
 
 ### Summary
 
