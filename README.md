@@ -6,14 +6,6 @@
 
 Exthouse - tool, powered by [Lighthouse](https://github.com/GoogleChrome/lighthouse), provides with report (Lighthouse style 😎) about impact on user performance by calculating all additional work extension added to the browser.
 
-## Install
-
-Install CLI using `npm`:
-
-```bash
-$ npm install --global exthouse
-```
-
 ## Table of Contents
 
 1.  [Motivation](#motivation)
@@ -33,10 +25,28 @@ $ npm install --global exthouse
 
 ## Motivation
 
+Often, measuring real user performance engineers take to the account factors, like device and network conditions.
+But there is one more factor, that is not in direct control - web extensions. They add additional scripts, DOM manipulations, and impacts user exeperience.
+
+Exthouse is a tool powered by [Lighthouse](https://github.com/GoogleChrome/lighthouse), that provides a report about web expetension impact on user performance.
+It measures extension performance score, that helps developers to improve perforamnce of their extensions and web in general.
+
+Inspired by https://twitter.com/denar90_/status/1065712688037277696
+
+## Gaols
+
 1. Highlight one more performance factor affecting web performance.
 2. Identify web extensions that have negative impact on web performance.
 3. Provide developers with tool to measure extension performance score, hence helps them to improve perforamnce of their extensions and web in general.
 4. Show that not only mobile users struggling with issue regrading performance, but also users on a desktop but by other factors - web extensions.
+
+## Install
+
+Install CLI using `npm`:
+
+```bash
+$ npm install --global exthouse
+```
 
 ## Methodology
 
@@ -85,40 +95,6 @@ Options:
   -h, --help         output usage information
 ```
 
-## Data
-
-### Summary
-
-Extensions fetched from [Chrome Extensions Archive](https://crx.dam.io/) which includes 176,323 extensions and 396,057 versions ranked by number of users downloaded them.
-
-### Top 20 extensions from Chrome Web Store
-
-Extensions were filtered to exclude extensions require login and not relevant extensions in categories like PLATFORM_APP.
-They are placed in `./exensions/chrome-top-20` folder.
-
-| Name                            | Score |
-| ------------------------------- | ----- |
-| honey                           | 31    |
-| grammarly-for-chrome            | 52    |
-| skype                           | 84    |
-| lastpass:-free-password-manager | 89    |
-| avira-browser-safety            | 93    |
-| avast-online-security           | 94    |
-| avast-safeprice                 | 99    |
-| adblock                         | 100   |
-| adblock-plus                    | 100   |
-| avg-web-tuneup                  | 100   |
-| cisco-webex-extension           | 100   |
-| easypdfcombine                  | 100   |
-| fromdoctopdf                    | 100   |
-| g-suite-training                | 100   |
-| google-docs-offline             | 100   |
-| google-translate                | 100   |
-| pinterest-save-button           | 100   |
-| tampermonkey                    | 100   |
-| ublock-origin                   | 100   |
-| unlimited-free-vpn-hola         | 100   |
-
 ## Evaluate any extension
 
 1. Download extension using https://chrome-extension-downloader.com/
@@ -128,16 +104,14 @@ They are placed in `./exensions/chrome-top-20` folder.
 
 ## Future Work
 
-- experiment with cache (try: cold, warm, hot) to see how scripts are effected by caching in affecting CPU. [More about cache](https://v8.dev/blog/code-caching-for-devs).
-- experiment with results, running in Chrome and Edge. Add flag `browserBinaryPath`.
-- expose node.js API.
-- `exthouse-new-long-tasks`: reformat table, 2 rows with old tasks and new tasks.
-- make repo smaller. Try [bfg-repo-cleaner](https://github.com/rtyley/bfg-repo-cleaner).
-- proceed with Firefox add-ons experiments (all related work is in branch `firefox-experimental`).
+- [ ] add support for login script to test extensions required authentication ([#22](https://github.com/treosh/exthouse/issues/22))
+- [ ] experiment with cache (try: warm, hot) to see how scripts are effected by v8 caching. [More about cache](https://v8.dev/blog/code-caching-for-devs).
+- [ ] experiment with results, running in Chrome and Edge. Add flag `browserBinaryPath`
+- [ ] expose node.js API ([#24](https://github.com/treosh/exthouse/issues/24))
+- [ ] experiment with Firefox add-ons (all related work is in the branch [firefox-experimental](https://github.com/treosh/exthouse/tree/firefox-experimental)).
+- [ ] make repo smaller, try [bfg-repo-cleaner](https://github.com/rtyley/bfg-repo-cleaner).
 
 ## Credits
-
-Inspired by https://twitter.com/denar90_/status/1065712688037277696
 
 Sponsored by [Treo.sh - Page speed monitoring made easy](https://treo.sh).
 
