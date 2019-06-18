@@ -73,6 +73,8 @@ exports.getDefaultExt = () => {
 
 exports.normalizeExtName = fileName => {
   let name = basename(fileName).replace('.crx', '')
+  // @fixme better regexp to catch name like unlimited-free-vpn---hola.crx
+  name = name.replace(/---/, '-')
   name = name.replace(/_v.*/, '')
   name = name.replace(/_/, '')
   name = toLower(name)
