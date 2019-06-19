@@ -82,8 +82,11 @@ To do analysis Exthouse evaluate several main steps:
 
 ### Environment conditions
 
-- Extensions installed and sites are opened using [Puppeteer](https://github.com/GoogleChrome/puppeteer) and Chromium browser.
-- Lighthouse run with: `throttlingMethod: devtools`, `emulatedFormFactor: 'desktop'`. `cpuSlowdownMultiplier: 2`. More settings in [config](/src/utils/measure-chromium.js#L7).
+ - Browser: `Chromium`
+ - Emulated form factor: `desktop`
+ - CPU slowdown multiplier: `2`
+
+More settings in [Lighthouse config](/src/utils/measure-chromium.js#L7).
 
 ### Measured metrics
 
