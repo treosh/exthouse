@@ -112,7 +112,7 @@ async function setMedianResult(extensions) {
       const completeMedianValues = completeRes.map(({ lhr }) => getMetricForMedian(lhr))
       const medianIndex = indexOf(completeMedianValues, getDiscreateMedian(completeMedianValues))
       const { extFile } = completeRes[medianIndex]
-      const medianFileName = join(tmpDir, `median-${extFile}`.replace(/-[-0-9]/, ''))
+      const medianFileName = join(tmpDir, `median-${extFile}`.replace(/-\d+(?=\.\w+$)/, ''))
       await remove(medianFileName)
       await symlink(extFile, medianFileName)
     })
