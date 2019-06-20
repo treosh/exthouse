@@ -1,9 +1,11 @@
+// exthouse ./extensions/top-20/ --runs=5 --format=json
 // usage: node script/parse-top-20.js
 // parse top-20 results in markdown table
 
 const { orderBy, find } = require('lodash')
 const { join } = require('path')
 const table = require('markdown-table')
+const millify = require('millify')
 const { readFileSync, readdirSync } = require('fs')
 const { normalizeExtName } = require('../src/utils/extension')
 
@@ -20,17 +22,17 @@ const metrics = resultFileNames.map(resultFileName => {
   })
 
   return {
-    name: lhr.extensionFullName,
+    name: extInfo.name,
     score,
     fidChange: lhr.audits['exthouse-max-potential-fid-change'].numericValue,
-    userCount: extInfo.user_count
+    userCount: millify(extInfo.user_count)
   }
 })
 
 const orederedMetrics = orderBy(metrics, metric => metric.score)
 console.log(
   table([
-    ['Name', 'Score', 'Users Count', 'First Input Delay change (ms)'],
+    ['Name', 'Score', 'Users Count', 'FID Δ ( ms )'],
     // @ts-ignore
     ...orederedMetrics.map(metric => [metric.name, metric.score, metric.userCount, metric.fidChange])
   ])

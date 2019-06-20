@@ -23,6 +23,9 @@
 1.  [Usage](#usage)
     1.  [Examples](#examples)
 1.  [Evaluate any extension](#evaluate-any-extension)
+1.  [Data](#data)
+    1.  [Summary](#summary)
+    1.  [Top 20 extensions from Chrome Web Store](#top-20-extensions-from-chrome-web-store)
 1.  [Future Work](#future-work)
 1.  [Credits](#credits)
 
@@ -138,6 +141,41 @@ Options:
 2. Copy path to the `MY_EXTENTION.crx` and pass to cli `exthouse MY_EXTENTION.crx --runs=3`
 3. The process takes a few minutes and results are stored in the [Lighthouse](https://github.com/GoogleChrome/lighthouse) report.
 4. All debug data is stored in `exthouse` folder.
+
+## Data
+
+### Summary
+
+Extensions fetched from [Chrome Extensions Archive](https://crx.dam.io/) which includes 176,323 extensions and 396,057 versions ranked by number of users downloaded them.
+
+### Top 20 extensions from Chrome Web Store
+
+| Name                            | Score | Users Count | FID Δ ( ms ) |
+| ------------------------------- | ----- | ----------- | ------------ |
+| Evernote Web Clipper            | 40    | 4.62M       | 349          |
+| Grammarly for Chrome            | 50    | 10M         | 114          |
+| Adblock Plus                    | 59    | 10M         | 118          |
+| Skype                           | 82    | 10M         | 150          |
+| LastPass: Free Password Manager | 86    | 6.62M       | 6            |
+| Avast Online Security           | 93    | 10M         | 0            |
+| Avira Browser Safety            | 94    | 10M         | 60           |
+| Avast SafePrice                 | 99    | 10M         | 62           |
+| 360 Internet Protection         | 100   | 6.21M       | 0            |
+| AdBlock                         | 100   | 10M         | 36           |
+| Adblock for Youtube™            | 100   | 5.49M       | 0            |
+| Google Mail Checker             | 100   | 4.83M       | 0            |
+| Google Translate                | 100   | 10M         | 15           |
+| Honey                           | 100   | 6.25M       | 0            |
+| LanSchool Web Helper            | 100   | 5.78M       | 0            |
+| Pinterest Save Button           | 100   | 10M         | 14           |
+| Save to Google Drive            | 100   | 4.64M       | 0            |
+| Tampermonkey                    | 100   | 10M         | 0            |
+| uBlock Origin                   | 100   | 10M         | 0            |
+| Поиск Mail.Ru                   | 100   | 4.53M       | 0            |
+
+
+Extensions were filtered to exclude extensions: requires login, not relevant extensions in categories like PLATFORM_APP or related to specific pages like `*://*.google.com/*`.
+Extensions are placed in `./exensions/chrome-top-20` folder.
 
 ## Future Work
 
