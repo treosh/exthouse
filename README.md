@@ -26,6 +26,7 @@ It measures an extension performance score that helps developers to improve the 
 2. Identify web extensions that harm web performance.
 3. Provide developers with reports they can use to improve performance.
 4. Show that desktop users may experience unexpected performance issues related to web extensions.
+5. Try to figure out the way to notify users about a negative impact of the installing extension, at best at Chrome Web Store level.
 
 ## Methodology
 
@@ -56,7 +57,7 @@ Most of the extensions add tasks to the main thread and affect interactivity met
 
 ## Analysis of top 10 extensions from Chrome Web Store
 
-This analysis evaluates the top 10 extensions from [Chrome Web Store]() by users count. Extensions are manually filtered to exclude login requirement, not relevant extensions in categories like PLATFORM_APP, or related to specific URLs like `*://*.google.com/*`.
+This analysis evaluates the top 10 extensions from [Chrome Web Store](https://chrome.google.com/webstore/category/extensions) by users count. Extensions are manually filtered to exclude login requirement, not relevant extensions in categories like PLATFORM_APP, or related to specific URLs like `*://*.google.com/*`.
 
 <img src="https://user-images.githubusercontent.com/6231516/59853553-c6f85480-9379-11e9-9535-227166ceeaed.png" width="60%" alt="Performance impact of top 10 extensions from Chrome Web Store ">
 
