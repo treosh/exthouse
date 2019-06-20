@@ -78,10 +78,10 @@ This analysis evaluates the top 10 extensions from [Chrome Web Store]() by users
 Install CLI using `npm`:
 
 ```bash
-$ npm install --global exthouse
+npm install --global exthouse
 ```
 
-**`$ exthouse --help`**
+**`exthouse --help`**
 
 ```
 Usage: exthouse [path/to/extension.crx] [options]
@@ -100,14 +100,14 @@ Options:
 ```bash
 # Evaluate extensions with several runs.
 # It performs do 3 runs, get median value and generate a report.
-$ exthouse Grammarly-for-Chrome.crx --runs=3`
+exthouse Grammarly-for-Chrome.crx --runs=3`
 
 # Generate a report based on existing data:
 # It reads results from `/exthouse` folder and generate report.
-$ exthouse Grammarly-for-Chrome.crx --disableGather
+exthouse Grammarly-for-Chrome.crx --disableGather
 
 # Output report in json format
-$ exthouse Grammarly-for-Chrome.crx --format=json`
+exthouse Grammarly-for-Chrome.crx --format=json`
 ```
 
 **Evaluate any extension**

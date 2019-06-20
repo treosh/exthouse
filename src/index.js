@@ -73,7 +73,7 @@ async function gatherLighthouseReports(extensions, opts) {
   log.info(`URL: %s`, opts.url)
   const totalRuns = opts.totalRuns || defaultTotalRuns
   for (const ext of extensions) {
-    log.info('Analyze %s (%sx times)', ext.name, totalRuns)
+    log.info('Analyze %s (%sx)', ext.name, totalRuns)
     for (let i = 1; i <= totalRuns; i++) {
       const startTime = Date.now()
       try {
