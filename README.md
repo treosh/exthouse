@@ -15,17 +15,9 @@
 ## Table of Contents
 
 1.  [Motivation](#motivation)
-1.  [Goals](#goals)
-1.  [Install](#install)
 1.  [Methodology](#methodology)
-    1.  [Environment conditions](#environment-conditions)
-    1.  [Measured metrics](#measured-metrics)
+1.  [Analysis of top 10 extensions from Chrome Web Store](#analysis-of-top-10-extensions-from-chrome-web-store)
 1.  [Usage](#usage)
-    1.  [Examples](#examples)
-1.  [Evaluate any extension](#evaluate-any-extension)
-1.  [Data](#data)
-    1.  [Summary](#summary)
-    1.  [Top 20 extensions from Chrome Web Store](#top-20-extensions-from-chrome-web-store)
 1.  [Future Work](#future-work)
 1.  [Credits](#credits)
 
@@ -39,20 +31,12 @@ It measures an extension performance score that helps developers to improve the 
 
 Inspired by https://twitter.com/denar90_/status/1065712688037277696
 
-## Goals
+**Project goals:**
 
 1. Highlight one more performance factor affecting web performance.
 2. Identify web extensions that harm web performance.
 3. Provide developers with reports they can use to improve performance.
 4. Show that desktop users may experience unexpected performance issues related to web extensions.
-
-## Install
-
-Install CLI using `npm`:
-
-```bash
-$ npm install --global exthouse
-```
 
 ## Methodology
 
@@ -69,7 +53,7 @@ Exthouse performs several steps to do analysis:
 
 1. Generates Lighthouse style report using the [Lighthouse scoring algorithm](https://github.com/GoogleChrome/lighthouse/blob/master/docs/scoring.md#how-are-the-scores-weighted).
 
-### Environment conditions
+**Environment conditions:**
 
 - Browser: `Chromium`
 - Emulated form factor: `desktop`
@@ -77,61 +61,16 @@ Exthouse performs several steps to do analysis:
 
 More settings in [Lighthouse config](/src/utils/measure-chromium.js#L7).
 
-### Measured metrics
+**Measured metrics:**
 
 Most of the extensions add tasks to the main thread and block CPU. These tasks affect interactive metrics.
 
 - Time to interactive (TTI) - Time to interactive is the amount of time it takes for the page to become fully interactive. [Learn more](https://developers.google.com/web/tools/lighthouse/audits/time-to-interactive).
 - First input delay (FID) - The change for the longest task duration highlights the impact on potential First Input Delay. [Learn more](https://developers.google.com/web/updates/2018/05/first-input-delay).
 
-## Usage
+## Analysis of top 10 extensions from Chrome Web Store
 
-**`exthouse [path/to/extension.crx] [options]`**
-
-**`$ exthouse --help`**
-
-```
-Options:
-  --runs <number>    amount of runs to evaluate median performance value (default: "1")
-  --url <url>        url to evaluate extension performance (default: "https://example.com/")
-  --format <format>  output format options: [json,html] (default: "html")
-  --disableGather    disable gathering and use /exthouse to produce results
-  -V, --version      output the version number
-  -h, --help         output usage information
-```
-
-**CLI usage examples**
-
-```bash
-# Evaluate extensions with several runs.
-# It performs do 3 runs, get median value and generate a report.
-
-$ exthouse Grammarly-for-Chrome.crx --runs=3`
-
-# Generate a report based on existing data:
-# It reads results from `/exthouse` folder and generate report.
-
-exthouse Grammarly-for-Chrome.crx --disableGather
-
-# Output report in json format
-
-$ exthouse Grammarly-for-Chrome.crx --format=json`
-```
-
-## Evaluate any extension
-
-1. Download extension using https://chrome-extension-downloader.com/
-2. Copy path to the `MY_EXTENTION.crx` and pass to cli `exthouse MY_EXTENTION.crx --runs=3`
-3. The process takes a few minutes and results are stored in the [Lighthouse](https://github.com/GoogleChrome/lighthouse) report.
-4. All debug data is stored in `exthouse` folder.
-
-## Data
-
-### Summary
-
-Extensions fetched from [Chrome Extensions Archive](https://crx.dam.io/) which includes 176,323 extensions and 396,057 versions ranked by number of users downloaded them.
-
-### Top 10 extensions from Chrome Web Store
+There are top 10 extensions by users count. They are filtered to exclude extensions: requires login, not relevant extensions in categories like PLATFORM_APP or related to specific pages like `*://*.google.com/*`.
 
 <img src="https://user-images.githubusercontent.com/6231516/59853553-c6f85480-9379-11e9-9535-227166ceeaed.png" width="60%" alt="Performance impact of top 10 extensions from Chrome Web Store ">
 
@@ -148,8 +87,51 @@ Extensions fetched from [Chrome Extensions Archive](https://crx.dam.io/) which i
 | Tampermonkey          | 100   | 10M         | 0            |
 | uBlock Origin         | 100   | 10M         | 0            |
 
-Extensions were filtered to exclude extensions: requires login, not relevant extensions in categories like PLATFORM_APP or related to specific pages like `*://*.google.com/*`.
-Extensions are placed in `./exensions/chrome-top-20` folder.
+## Usage
+
+Install CLI using `npm`:
+
+```bash
+$ npm install --global exthouse
+```
+
+**`$ exthouse --help`**
+
+```
+Usage: exthouse [path/to/extension.crx] [options]
+
+Options:
+  --runs <number>    amount of runs to evaluate median performance value (default: "1")
+  --url <url>        url to evaluate extension performance (default: "https://example.com/")
+  --format <format>  output format options: [json,html] (default: "html")
+  --disableGather    disable gathering and use /exthouse to produce results
+  -V, --version      output the version number
+  -h, --help         output usage information
+```
+
+**CLI usage examples**
+
+```bash
+# Evaluate extensions with several runs.
+# It performs do 3 runs, get median value and generate a report.
+$ exthouse Grammarly-for-Chrome.crx --runs=3`
+
+# Generate a report based on existing data:
+# It reads results from `/exthouse` folder and generate report.
+$ exthouse Grammarly-for-Chrome.crx --disableGather
+
+# Output report in json format
+$ exthouse Grammarly-for-Chrome.crx --format=json`
+```
+
+**Evaluate any extension**
+
+1. Download extension using https://chrome-extension-downloader.com/
+2. Copy path to the `MY_EXTENTION.crx` and pass to cli `exthouse MY_EXTENTION.crx --runs=3`
+3. The process takes a few minutes and results are stored in the [Lighthouse](https://github.com/GoogleChrome/lighthouse) report.
+4. All debug data is stored in `exthouse` folder.
+
+Find example extensions in [extensions](/extensions) folder.
 
 ## Future Work
 
