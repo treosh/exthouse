@@ -148,30 +148,22 @@ Options:
 
 Extensions fetched from [Chrome Extensions Archive](https://crx.dam.io/) which includes 176,323 extensions and 396,057 versions ranked by number of users downloaded them.
 
-### Top 20 extensions from Chrome Web Store
+### Top 10 extensions from Chrome Web Store
 
-| Name                            | Score | Users Count | FID Δ ( ms ) |
-| ------------------------------- | ----- | ----------- | ------------ |
-| Evernote Web Clipper            | 40    | 4.62M       | 349          |
-| Grammarly for Chrome            | 50    | 10M         | 114          |
-| Adblock Plus                    | 59    | 10M         | 118          |
-| Skype                           | 82    | 10M         | 150          |
-| LastPass: Free Password Manager | 86    | 6.62M       | 0            |
-| Avast Online Security           | 93    | 10M         | 0            |
-| Avira Browser Safety            | 94    | 10M         | 60           |
-| Avast SafePrice                 | 99    | 10M         | 62           |
-| 360 Internet Protection         | 100   | 6.21M       | 0            |
-| AdBlock                         | 100   | 10M         | 0            |
-| Adblock for Youtube™            | 100   | 5.49M       | 0            |
-| Google Mail Checker             | 100   | 4.83M       | 0            |
-| Google Translate                | 100   | 10M         | 0            |
-| Honey                           | 100   | 6.25M       | 0            |
-| LanSchool Web Helper            | 100   | 5.78M       | 0            |
-| Pinterest Save Button           | 100   | 10M         | 0            |
-| Save to Google Drive            | 100   | 4.64M       | 0            |
-| Tampermonkey                    | 100   | 10M         | 0            |
-| uBlock Origin                   | 100   | 10M         | 0            |
-| Поиск Mail.Ru                   | 100   | 4.53M       | 0            |
+<img src="https://user-images.githubusercontent.com/6231516/59853553-c6f85480-9379-11e9-9535-227166ceeaed.png" width="60%" alt="Performance impact of top 10 extensions from Chrome Web Store ">
+
+| Name                  | Score | Users Count | FID Δ ( ms ) |
+| --------------------- | ----- | ----------- | ------------ |
+| Grammarly for Chrome  | 50    | 10M         | 114          |
+| Adblock Plus          | 59    | 10M         | 118          |
+| Skype                 | 82    | 10M         | 150          |
+| Avira Browser Safety  | 94    | 10M         | 60           |
+| Avast SafePrice       | 99    | 10M         | 62           |
+| AdBlock               | 100   | 10M         | 0            |
+| Google Translate      | 100   | 10M         | 0            |
+| Pinterest Save Button | 100   | 10M         | 0            |
+| Tampermonkey          | 100   | 10M         | 0            |
+| uBlock Origin         | 100   | 10M         | 0            |
 
 Extensions were filtered to exclude extensions: requires login, not relevant extensions in categories like PLATFORM_APP or related to specific pages like `*://*.google.com/*`.
 Extensions are placed in `./exensions/chrome-top-20` folder.
