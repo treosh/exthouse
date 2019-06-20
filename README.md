@@ -31,20 +31,20 @@
 
 ## Motivation
 
-Often, measuring real user performance engineers take to the account factors, like device and network conditions.
-But there is one more factor, that is not in direct control - web extensions. They add additional scripts, DOM manipulations, and impacts user experience.
+When measuring real user performance engineers take to the account factors like device and network conditions.
+But there is one more factor, that is not in direct control - web extensions. They add additional scripts, DOM manipulations, and impact the user experience.
 
-Exthouse is a tool powered by [Lighthouse](https://github.com/GoogleChrome/lighthouse), that provides a report about web extension impact on user performance.
-It measures extension performance score, that helps developers to improve the performance of their extensions and web in general.
+Exthouse is a tool powered by [Lighthouse](https://github.com/GoogleChrome/lighthouse) that provides a report about web extension impact on web performance.
+It measures an extension performance score that helps developers to improve the performance of their extensions and web in general.
 
 Inspired by https://twitter.com/denar90_/status/1065712688037277696
 
 ## Goals
 
 1. Highlight one more performance factor affecting web performance.
-2. Identify web extensions that have a negative impact on web performance.
+2. Identify web extensions that harm web performance.
 3. Provide developers with reports they can use to improve performance.
-4. Show that desktop users struggling with performance issues - web extensions.
+4. Show that desktop users may experience unexpected performance issues related to web extensions.
 
 ## Install
 
@@ -56,35 +56,18 @@ $ npm install --global exthouse
 
 ## Methodology
 
-To do analysis, Exthouse evaluates several main steps:
+Exthouse performs several steps to do analysis:
 
-1. Unzip provided `MY_EXTENTION.crx` file.
+1. Launches a browser without extension to evaluate the default performance and store results `./exthouse/result-default-1.json`
+1. Launch a browser with installed extension using Puppeteer and stores results to `./exthouse/MY_EXTENTION-1.json`
+1. Extends Lighthouse performance categories with additional audits to estimate the impact of the extension:
 
-2. Launches a browser 2 times:
+   - `exthouse-new-long-tasks` - The value represents a sum of Long Tasks. [Long Tasks](https://developer.mozilla.org/en-US/docs/Web/API/Long_Tasks_API) (weight: 1).
+   - `exthouse-max-potential-fid-change` - The change for the longest task duration highlights the impact on potential First Input Delay (weight: 1).
+   - `exthouse-extension-files` - Extension files add extra CPU consumption for every URL visit. Bundle resources into one and leverage hot chaching. [Learn more](https://v8.dev/blog/code-caching-for-devs) (weight: 1).
+   - `exthouse-default-metrics` - All metrics collected from the default run (without extension) (weight: 0).
 
-
-    During the first launch:
-
-    - URL is opened and performance results gathered.
-    - Lighthouse performance results are stored in `./exthouse/result-default-1.json`.
-
-    During the second launch:
-
-    - Extension installed using Puppeteer.
-    - URL is opened and performance results gathered.
-    - Lighthouse performance results are stored in `./exthouse/MY_EXTENTION-1.json`.
-
-3. Extends Lighthouse performance categories with additional:
-
-
-    - `exthouse-new-long-tasks` - The value represents a sum of Long Tasks. [Long Tasks](https://developer.mozilla.org/en-US/docs/Web/API/Long_Tasks_API) (weight: 1).
-    - `exthouse-max-potential-fid-change` - The change for the longest task duration highlights the impact on potential First Input Delay (weight: 1).
-    - `exthouse-extension-files` - Extension files add extra CPU consumption for every URL visit. Bundle resources into one and leverage hot chaching. [Learn more](https://v8.dev/blog/code-caching-for-devs) (weight: 1).
-    - `exthouse-default-metrics` - All metrics collected from the default run (without extension) (weight: 0).
-
-    Note: Scoring algorithm is based on [Lighthouse scoring algorithm](https://github.com/GoogleChrome/lighthouse/blob/master/docs/scoring.md#how-are-the-scores-weighted).
-
-4. Generates Lighthouse style report.
+1. Generates Lighthouse style report using the [Lighthouse scoring algorithm](https://github.com/GoogleChrome/lighthouse/blob/master/docs/scoring.md#how-are-the-scores-weighted).
 
 ### Environment conditions
 
@@ -96,7 +79,7 @@ More settings in [Lighthouse config](/src/utils/measure-chromium.js#L7).
 
 ### Measured metrics
 
-Most of the extensions add tasks to the main thread and load CPU. These tasks affect interactive metrics.
+Most of the extensions add tasks to the main thread and block CPU. These tasks affect interactive metrics.
 
 - Time to interactive (TTI) - Time to interactive is the amount of time it takes for the page to become fully interactive. [Learn more](https://developers.google.com/web/tools/lighthouse/audits/time-to-interactive).
 - First input delay (FID) - The change for the longest task duration highlights the impact on potential First Input Delay. [Learn more](https://developers.google.com/web/updates/2018/05/first-input-delay).
@@ -117,23 +100,23 @@ Options:
   -h, --help         output usage information
 ```
 
-### Examples
+**CLI usage examples**
 
-- Evaluate extensions with several runs:
+```bash
+# Evaluate extensions with several runs.
+# It performs do 3 runs, get median value and generate a report.
 
-  **`$ exthouse Grammarly-for-Chrome.crx --runs=3`**
+$ exthouse Grammarly-for-Chrome.crx --runs=3`
 
-  Will do 3 runs, get median value and generate a report
+# Generate a report based on existing data:
+# It reads results from `/exthouse` folder and generate report.
 
-- Generate a report based on existing data:
+exthouse Grammarly-for-Chrome.crx --disableGather
 
-  **`$ exthouse Grammarly-for-Chrome.crx --disableGather`**
+# Output report in json format
 
-  Will read results from `/exthouse` folder and generate report.
-
-- Output report in json format:
-
-  **`$ exthouse Grammarly-for-Chrome.crx --format=json`**
+$ exthouse Grammarly-for-Chrome.crx --format=json`
+```
 
 ## Evaluate any extension
 
