@@ -28,7 +28,6 @@
     "performance"
   ],
   "scripts": {
-    "start": "node script/execute-with-puppeteer.js",
     "test": "prettier -c bin/** src/** package.json *.md && tsc -p ."
   },
   "dependencies": {

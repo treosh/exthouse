@@ -173,7 +173,6 @@ Extensions fetched from [Chrome Extensions Archive](https://crx.dam.io/) which i
 | uBlock Origin                   | 100   | 10M         | 0            |
 | Поиск Mail.Ru                   | 100   | 4.53M       | 0            |
 
-
 Extensions were filtered to exclude extensions: requires login, not relevant extensions in categories like PLATFORM_APP or related to specific pages like `*://*.google.com/*`.
 Extensions are placed in `./exensions/chrome-top-20` folder.
 
