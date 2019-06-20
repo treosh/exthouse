@@ -1,7 +1,7 @@
 {
-  "name": "@treosh/exthouse",
+  "name": "exthouse",
   "version": "1.0.0",
-  "description": "Analyze browser extension impact on web performance",
+  "description": "Analyze the impact of a browser extension on web performance",
   "repository": "https://github.com/treosh/exthouse",
   "author": "Artem Denysov <denysov.artem@gmail.com>, Aleksey Kulikov <alekseykulikov@me.com>",
   "license": "MIT",
@@ -19,12 +19,15 @@
   "keywords": [
     "web performance",
     "extensions",
+    "web extensions",
     "browser extension",
     "chrome extension",
+    "user experience",
+    "long tasks",
+    "first input delay",
+    "time to interactive",
+    "lighthouse",
     "chrome",
-    "firefox",
-    "edge",
-    "cli",
     "performance"
   ],
   "scripts": {
