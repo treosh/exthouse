@@ -156,18 +156,18 @@ Extensions fetched from [Chrome Extensions Archive](https://crx.dam.io/) which i
 | Grammarly for Chrome            | 50    | 10M         | 114          |
 | Adblock Plus                    | 59    | 10M         | 118          |
 | Skype                           | 82    | 10M         | 150          |
-| LastPass: Free Password Manager | 86    | 6.62M       | 6            |
+| LastPass: Free Password Manager | 86    | 6.62M       | 0            |
 | Avast Online Security           | 93    | 10M         | 0            |
 | Avira Browser Safety            | 94    | 10M         | 60           |
 | Avast SafePrice                 | 99    | 10M         | 62           |
 | 360 Internet Protection         | 100   | 6.21M       | 0            |
-| AdBlock                         | 100   | 10M         | 36           |
+| AdBlock                         | 100   | 10M         | 0            |
 | Adblock for Youtube™            | 100   | 5.49M       | 0            |
 | Google Mail Checker             | 100   | 4.83M       | 0            |
-| Google Translate                | 100   | 10M         | 15           |
+| Google Translate                | 100   | 10M         | 0            |
 | Honey                           | 100   | 6.25M       | 0            |
 | LanSchool Web Helper            | 100   | 5.78M       | 0            |
-| Pinterest Save Button           | 100   | 10M         | 14           |
+| Pinterest Save Button           | 100   | 10M         | 0            |
 | Save to Google Drive            | 100   | 4.64M       | 0            |
 | Tampermonkey                    | 100   | 10M         | 0            |
 | uBlock Origin                   | 100   | 10M         | 0            |

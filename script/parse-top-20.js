@@ -21,10 +21,12 @@ const metrics = resultFileNames.map(resultFileName => {
     return normalizeExtName(res.name).replace(/\s+/g, '-') === lhr.extensionFullName
   })
 
+  const fidChange = lhr.audits['exthouse-max-potential-fid-change'].numericValue
+
   return {
     name: extInfo.name,
     score,
-    fidChange: lhr.audits['exthouse-max-potential-fid-change'].numericValue,
+    fidChange: fidChange > 50 ? fidChange : 0,
     userCount: millify(extInfo.user_count)
   }
 })
