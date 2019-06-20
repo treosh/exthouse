@@ -2,7 +2,7 @@ const { omit, indexOf } = require('lodash')
 const { join } = require('path')
 const fs = require('fs')
 const { promisify } = require('util')
-const { emptyDir } = require('fs-extra')
+const { emptyDir, remove } = require('fs-extra')
 const ReportGenerator = require('lighthouse/lighthouse-core/report/report-generator')
 const open = require('open')
 const log = require('./utils/logger')
@@ -108,18 +108,13 @@ async function setMedianResult(extensions) {
           }
         })
       )
-      const completeRes = results.filter(({ lhr }) => getMetricForMedian(lhr)) // filter errors
+      const completeRes = results.filter(({ lhr }) => getMetricForMedian(lhr) && noLoadingError(lhr)) // filter errors
       const completeMedianValues = completeRes.map(({ lhr }) => getMetricForMedian(lhr))
       const medianIndex = indexOf(completeMedianValues, getDiscreateMedian(completeMedianValues))
       const { extFile } = completeRes[medianIndex]
-      try {
-        const medianFileName = `median-${extFile}`.replace(/-[-0-9]/, '')
-        await symlink(extFile, join(tmpDir, medianFileName))
-      } catch (error) {
-        if (error.code !== 'EEXIST') {
-          throw error
-        }
-      }
+      const medianFileName = join(tmpDir, `median-${extFile}`.replace(/-\d+(?=\.\w+$)/, ''))
+      await remove(medianFileName)
+      await symlink(extFile, medianFileName)
     })
   )
 }
@@ -143,6 +138,18 @@ async function getMedianResult(ext) {
 
 function getMetricForMedian(lhr) {
   return Math.round(lhr.audits['max-potential-fid'].numericValue || 0)
+}
+
+/**
+ * Check if `lhr` does not include loading errors, like:
+ * - "Lighthouse was unable to reliably load the page you requested. Make sure you are testing the correct URL and that the server is properly responding to all requests. (Details: net::ERR_SSL_PROTOCOL_ERROR)"
+ *
+ * @param {LhResult} lhr
+ * @return {boolean}
+ */
+
+function noLoadingError(lhr) {
+  return lhr.runWarnings.every(warning => !warning.includes('net::ERR'))
 }
 
 /**
