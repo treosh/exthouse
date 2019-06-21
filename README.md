@@ -61,18 +61,18 @@ This analysis evaluates the top 10 extensions from [Chrome Web Store](https://ch
 
 <img src="https://user-images.githubusercontent.com/6231516/59853553-c6f85480-9379-11e9-9535-227166ceeaed.png" width="60%" alt="Performance impact of top 10 extensions from Chrome Web Store ">
 
-| Name                  | Score | Users Count | FID Δ ( ms ) |
-| --------------------- | ----- | ----------- | ------------ |
-| Grammarly for Chrome  | 50    | 10M         | 114          |
-| Adblock Plus          | 59    | 10M         | 118          |
-| Skype                 | 82    | 10M         | 150          |
-| Avira Browser Safety  | 94    | 10M         | 60           |
-| Avast SafePrice       | 99    | 10M         | 62           |
-| AdBlock               | 100   | 10M         | 0            |
-| Google Translate      | 100   | 10M         | 0            |
-| Pinterest Save Button | 100   | 10M         | 0            |
-| Tampermonkey          | 100   | 10M         | 0            |
-| uBlock Origin         | 100   | 10M         | 0            |
+| Name                  | Score | Users Count | FID Δ ( ms ) | Scripting Δ ( ms ) |
+| --------------------- | ----- | ----------- | ------------ | ------------------ |
+| Grammarly for Chrome  | 50    | 10M         | 114          | 530                |
+| Adblock Plus          | 59    | 10M         | 118          | 760                |
+| Skype                 | 82    | 10M         | 150          | 120                |
+| Avira Browser Safety  | 94    | 10M         | 60           | 30                 |
+| Avast SafePrice       | 99    | 10M         | 62           | 0                  |
+| AdBlock               | 100   | 10M         | 0            | 0                  |
+| Google Translate      | 100   | 10M         | 0            | 0                  |
+| Pinterest Save Button | 100   | 10M         | 0            | 0                  |
+| Tampermonkey          | 100   | 10M         | 0            | 0                  |
+| uBlock Origin         | 100   | 10M         | 0            | 0                  |
 
 ## Usage
 
